@@ -3,7 +3,7 @@
 require("dotenv").config();
 
 const GeminiClient = require("./geminiClient");
-const ToolRegistry = require("../tools/tools");
+const ToolRegistry = require("../tools/ToolRegistry");
 
 
 const tools = new ToolRegistry();
