@@ -2,6 +2,7 @@ const ToolRegistry = require("./ToolRegistry");
 const { registerDockerTools } = require("./toolModules/dockerTools");
 const { registerFetchTool } = require("./toolModules/fetchTool");
 const { registerNodeTool } = require("./toolModules/nodeTool");
+const { registerCliTool } = require("./toolModules/cliTool");
 const { registerRunAppTool } = require("./toolModules/runAppTool");
 const { registerRunCodeTool } = require("./toolModules/runCode");
 const { registerCypressTools } = require("./toolModules/cypressTools");
@@ -12,6 +13,7 @@ function createTools() {
 
   registerFetchTool(tools);
   registerNodeTool(tools);
+  registerCliTool(tools);
   registerRunAppTool(tools);
   registerRunCodeTool(tools);
   registerCypressTools(tools);
