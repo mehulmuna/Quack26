@@ -1,12 +1,24 @@
 const { runAgentLoop } = require("./loop");
 const ToolRegistry = require("./tools/ToolRegistry");
 const { registerMemoryTools } = require("./tools/toolModules/memoryTools");
-const { registerAdrianTools } = require("./tools/toolModules/adrianTools");
+const { registerToxiproxyTools } = require("./tools/toolModules/toxiproxyTools");
+const { registerDockerTools } = require("./tools/toolModules/dockerTools");
+const { ensureProxyReady, ensureChaosRuntime } = require("./chaos/ensureRuntime");
 const {
   ATTACK_LOOP_SYSTEM_PROMPT,
   buildAttackLoopUserPrompt,
 } = require("./prompts/attackLoop");
-const { ensureChaosRuntime } = require("./chaos/ensureRuntime");
+
+const ATTACK_CHAOS_TOOL_NAMES = [
+  "toxiproxy_add_latency",
+  "toxiproxy_add_reset_peer",
+  "docker_stop_instance",
+];
+
+const TOXIPROXY_ATTACK_TOOLS = new Set([
+  "toxiproxy_add_latency",
+  "toxiproxy_add_reset_peer",
+]);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -62,9 +74,36 @@ async function readPhase4SummaryFromMemory() {
   };
 }
 
+function registerAttackChaosTools(tools) {
+  const source = new ToolRegistry();
+  registerToxiproxyTools(source);
+  registerDockerTools(source);
+
+  for (const name of ATTACK_CHAOS_TOOL_NAMES) {
+    const tool = source.tools.get(name);
+    if (!tool) throw new Error(`Missing attack chaos tool: ${name}`);
+
+    tools.register({
+      name: tool.declaration.name,
+      description: tool.declaration.description,
+      parameters: tool.declaration.parameters,
+      execute: TOXIPROXY_ATTACK_TOOLS.has(name)
+        ? async (args) => {
+            const proxy = args.proxy;
+            if (!proxy) {
+              throw new Error(`${name} requires proxy (use the service name from memory)`);
+            }
+            await ensureProxyReady(proxy);
+            return tool.execute(args);
+          }
+        : tool.execute,
+    });
+  }
+}
+
 function createAttackTools() {
   const tools = new ToolRegistry();
-  registerAdrianTools(tools);
+  registerAttackChaosTools(tools);
 
   const memoryOnly = new ToolRegistry();
   registerMemoryTools(memoryOnly);
@@ -144,6 +183,7 @@ module.exports = {
   extractPhase4Summary,
   createAttackTools,
   wrapToolsWithPacing,
+  ATTACK_CHAOS_TOOL_NAMES,
   ATTACK_LOOP_SYSTEM_PROMPT,
   buildAttackLoopUserPrompt,
 };

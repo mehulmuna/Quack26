@@ -16,8 +16,8 @@ const {
   readPhase4SummaryFromMemory,
   createAttackTools,
   wrapToolsWithPacing,
+  ATTACK_CHAOS_TOOL_NAMES,
 } = require("../attackLoop");
-const { ADRIAN_TOOL_NAMES } = require("../tools/toolModules/adrianTools");
 const { ensureChaosRuntime } = require("../chaos/ensureRuntime");
 
 async function testMemoryRead() {
@@ -39,16 +39,16 @@ async function testMemoryRead() {
 }
 
 async function testAttackTools() {
-  console.log("\n--- 2) Adrian tools registry ---");
+  console.log("\n--- 2) Attack chaos tools registry ---");
   const tools = createAttackTools();
   const names = tools.declarations().map((d) => d.name);
-  for (const expected of [...ADRIAN_TOOL_NAMES, "memory_record_intervention"]) {
+  for (const expected of [...ATTACK_CHAOS_TOOL_NAMES, "memory_record_intervention"]) {
     if (!names.includes(expected)) {
       throw new Error(`Missing tool declaration: ${expected}`);
     }
   }
   console.log("registered:", names.join(", "));
-  console.log("Adrian tools: passed");
+  console.log("Attack chaos tools: passed");
 }
 
 async function testPacing() {
@@ -72,28 +72,28 @@ async function testPacing() {
 }
 
 async function testChaosRuntimeAndTools() {
-  console.log("\n--- 4) Chaos runtime + Adrian tools (live) ---");
+  console.log("\n--- 4) Chaos runtime + attack tools (live) ---");
   try {
     const runtime = await ensureChaosRuntime();
     console.log("ensureChaosRuntime:", JSON.stringify(runtime, null, 2));
 
     const tools = createAttackTools();
-    const latency = await tools.execute("injectLatency", {
-      service: "api-server",
+    const latency = await tools.execute("toxiproxy_add_latency", {
+      proxy: "api-server",
       latencyMs: 100,
     });
-    console.log("injectLatency:", latency.ok ? "ok" : latency);
+    console.log("toxiproxy_add_latency:", latency.ok !== false ? "ok" : latency);
 
-    await tools.execute("packetDropping", {
-      service: "api-server",
+    await tools.execute("toxiproxy_add_reset_peer", {
+      proxy: "api-server",
       toxicity: 0.1,
     });
-    console.log("packetDropping: ok");
+    console.log("toxiproxy_add_reset_peer: ok");
 
-    const stopped = await tools.execute("stopContainer", { container: "api-server" });
-    console.log("stopContainer:", stopped);
+    const stopped = await tools.execute("docker_stop_instance", { name: "api-server" });
+    console.log("docker_stop_instance:", stopped);
 
-    console.log("Live Adrian tools: passed");
+    console.log("Live attack tools: passed");
   } catch (err) {
     console.error(
       "Live tools failed (is Docker Desktop running?):",
@@ -132,10 +132,10 @@ async function testAgentRun() {
     console.log("\nTool activity:", [...new Set(toolNames)].join(", "));
   }
 
-  const adrianUsed = toolNames.some((n) =>
-    ADRIAN_TOOL_NAMES.some((a) => n.includes(a))
+  const chaosUsed = toolNames.some((n) =>
+    ATTACK_CHAOS_TOOL_NAMES.some((a) => n.includes(a))
   );
-  console.log("Adrian tool used:", adrianUsed);
+  console.log("Chaos tool used:", chaosUsed);
 
   if (result.error) process.exit(1);
 }

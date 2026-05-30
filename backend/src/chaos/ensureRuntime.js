@@ -90,6 +90,24 @@ async function proxyExists(name) {
   }
 }
 
+async function ensureProxyReady(proxyName) {
+  if (await proxyExists(proxyName)) {
+    return { ok: true, proxy: proxyName };
+  }
+
+  if (
+    proxyName === API_SERVER.proxyName ||
+    proxyName === API_SERVER.containerName
+  ) {
+    await ensureChaosRuntime({ ensureApiServer: true });
+    return { ok: true, proxy: proxyName, bootstrapped: true };
+  }
+
+  throw new Error(
+    `Toxiproxy proxy "${proxyName}" not found. Start chaos runtime or create the proxy first.`
+  );
+}
+
 async function ensureToxiproxyProxy({
   name,
   listenPort,
@@ -158,6 +176,7 @@ module.exports = {
   ensureChaosRuntime,
   ensureToxiproxyContainer,
   ensureToxiproxyProxy,
+  ensureProxyReady,
   waitForToxiproxyApi,
   proxyExists,
   isToxiproxyRunning,

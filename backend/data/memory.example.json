@@ -1,0 +1,27 @@
+{
+  "knowledge": {
+    "target_directory": ".",
+    "analyzed_at": "2026-01-01T00:00:00.000Z",
+    "project_summary": "Example project for local chaos smoke tests.",
+    "architecture_notes": "api-server container behind toxiproxy proxy api-server.",
+    "vulnerabilities": [
+      {
+        "title": "Example: dependency on single api-server instance",
+        "severity": "medium",
+        "description": "Stopping api-server removes the only backend instance."
+      }
+    ],
+    "api_server": {
+      "configuration": {
+        "name": "api-server",
+        "environment": "docker"
+      }
+    }
+  },
+  "active_state": {
+    "containers": [],
+    "toxics": []
+  },
+  "tool_logs": [],
+  "history": []
+}
