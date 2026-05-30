@@ -14,7 +14,9 @@
     }
   },
   "active_state": {
-    "containers": [],
+    "containers": [
+      "api-server"
+    ],
     "toxics": [
       {
         "type": "latency",
@@ -27,6 +29,14 @@
       },
       {
         "latency_ms": 2000,
+        "service": "api-server"
+      },
+      {
+        "latencyMs": 500,
+        "service": "api-server"
+      },
+      {
+        "toxicity": 0.25,
         "service": "api-server"
       }
     ]
@@ -49,6 +59,23 @@
       "type": "toxic_added",
       "latency_ms": 2000,
       "service": "api-server"
+    },
+    {
+      "timestamp": "2026-05-30T22:14:01.220Z",
+      "type": "toxic_added",
+      "latencyMs": 500,
+      "service": "api-server"
+    },
+    {
+      "timestamp": "2026-05-30T22:14:04.935Z",
+      "type": "toxic_added",
+      "toxicity": 0.25,
+      "service": "api-server"
+    },
+    {
+      "timestamp": "2026-05-30T22:14:09.084Z",
+      "type": "container_stop",
+      "container": "api-server"
     }
   ],
   "tool_logs": [

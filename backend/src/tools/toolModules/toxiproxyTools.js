@@ -1,3 +1,5 @@
+const { runDockerCli } = require("../../chaos/dockerClient");
+
 const fetchImpl = globalThis.fetch || (() => {
     try {
         return require("node:undici").fetch;
@@ -259,7 +261,7 @@ function registerToxiproxyTools(tools) {
       cat /etc/hosts
     `;
 
-            const result = await run("docker", [
+            const result = await runDockerCli([
                 "exec",
                 container,
                 "sh",
@@ -298,7 +300,7 @@ function registerToxiproxyTools(tools) {
       cat /etc/hosts
     `;
 
-            const result = await run("docker", [
+            const result = await runDockerCli([
                 "exec",
                 container,
                 "sh",
@@ -319,4 +321,6 @@ function registerToxiproxyTools(tools) {
 
 module.exports = {
     registerToxiproxyTools,
+    tox,
+    TOXIPROXY_URL,
 };
