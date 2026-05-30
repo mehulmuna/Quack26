@@ -1,45 +1,46 @@
 export default function ExperimentPanel({ experiment }) {
   return (
-    <section className="rounded-[2rem] border border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 via-slate-950/70 to-amber-300/10 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.32)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
+    <section className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-cyan-100/60">Current Experiment</p>
-          <h2 className="mt-3 text-3xl font-semibold text-white">Chaos in motion</h2>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Active Experiment</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Current attacks in progress</h2>
         </div>
-        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-200">
+        <span className={`rounded-full border px-3 py-1 text-xs ${experiment.status === 'Running' || experiment.status === 'Healthy' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' : experiment.status === 'Degraded' ? 'border-amber-400/30 bg-amber-400/10 text-amber-200' : 'border-rose-400/30 bg-rose-400/10 text-rose-200'}`}>
           {experiment.status}
         </span>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Target</p>
-          <p className="mt-2 text-lg font-semibold text-white">{experiment.target}</p>
+      <div className="mt-5 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Target</p>
+          <p className="mt-2 text-xl font-medium text-white">{experiment.target}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Attack</p>
-          <p className="mt-2 text-lg font-semibold text-white">{experiment.attack}</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-white/10 bg-slate-950/60 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Attack</p>
+            <p className="mt-2 text-sm text-slate-100">{experiment.attack}</p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-slate-950/60 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Duration</p>
+            <p className="mt-2 text-sm text-slate-100">{experiment.duration}</p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-slate-950/60 p-4 sm:col-span-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Expected impact</p>
+            <p className="mt-2 text-sm text-slate-100">{experiment.expectedImpact}</p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Progress</p>
-          <p className="mt-2 text-lg font-semibold text-white">{experiment.progress}%</p>
+        <div>
+          <div className="flex items-center justify-between text-sm text-slate-300">
+            <span>Progress</span>
+            <span className="font-medium text-white">{experiment.progress}%</span>
+          </div>
+          <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-300" style={{ width: `${experiment.progress}%` }} />
+          </div>
+          <p className="mt-3 text-sm text-cyan-100">{experiment.message}</p>
         </div>
       </div>
-
-      <div className="mt-6 space-y-3">
-        <div className="flex items-center justify-between text-sm text-slate-300">
-          <span>Experiment progress</span>
-          <span className="font-medium text-white">{experiment.progress}%</span>
-        </div>
-        <div className="h-3 overflow-hidden rounded-full bg-white/8">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-teal-300 to-amber-300 transition-all duration-500"
-            style={{ width: `${experiment.progress}%` }}
-          />
-        </div>
-      </div>
-
-      <p className="mt-6 max-w-2xl text-sm leading-7 text-slate-300">{experiment.impact}</p>
     </section>
   );
 }

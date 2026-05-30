@@ -26,10 +26,15 @@ export async function getDashboardData() {
     return {
       ...mockDashboardData,
       ...data,
-      stats: data.stats ?? mockDashboardData.stats,
+      kpis: data.kpis ?? mockDashboardData.kpis,
       services: data.services ?? mockDashboardData.services,
-      currentExperiment: data.currentExperiment ?? mockDashboardData.currentExperiment,
-      events: data.events ?? mockDashboardData.events,
+      activeExperiment: data.activeExperiment ?? mockDashboardData.activeExperiment,
+      infrastructure: data.infrastructure ?? mockDashboardData.infrastructure,
+      activeEffects: data.activeEffects ?? mockDashboardData.activeEffects,
+      issues: data.issues ?? mockDashboardData.issues,
+      activityFeed: data.activityFeed ?? mockDashboardData.activityFeed,
+      tools: data.tools ?? mockDashboardData.tools,
+      reports: data.reports ?? mockDashboardData.reports,
     };
   } catch {
     return mockDashboardData;
