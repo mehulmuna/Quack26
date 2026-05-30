@@ -1,52 +1,80 @@
-require('dotenv').config();
-const GeminiClient = require('./geminiClient');
-const tools = require('../tools/tools');
 
-// sample tools
-tools.register({
-  name: 'get_time',
-  description: 'Returns current server time',
-  execute: async () => ({ time: new Date().toISOString() }),
-});
+const path = require("node:path");
+// Ensure dotenv looks for the .env file in the backend directory
+require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
+
+const GeminiClient = require("./geminiClient");
+const ToolRegistry = require("../tools/ToolRegistry");
+const { registerMemoryTools } = require("../tools/toolModules/memoryTools");
+
+
+const tools = new ToolRegistry();
 
 tools.register({
-  name: 'calc',
-  description: 'Evaluates a simple arithmetic expression provided in args.expr',
-  execute: async (args) => {
-    try {
-      // very small, safe eval for arithmetic only
-      const expr = String(args?.expr || '0').replace(/[^0-9+\-*/(). %]/g, '');
-      // eslint-disable-next-line no-eval
-      const result = eval(expr);
-      return { result };
-    } catch (e) {
-      return { error: 'invalid expression' };
-    }
+  name: "add_latency",
+  description: "Adds artificial latency to a service.",
+  parameters: {
+    type: "object",
+    properties: {
+      service: {
+        type: "string",
+        description: "Service/container name",
+      },
+      milliseconds: {
+        type: "integer",
+        description: "Latency to add in milliseconds",
+      },
+    },
+    required: ["service", "milliseconds"],
+  },
+  execute: async ({ service, milliseconds }) => {
+    console.log(`Adding ${milliseconds}ms latency to ${service}`);
+    return { ok: true, service, milliseconds };
   },
 });
 
+tools.register({
+  name: "kill_container",
+  description: "Kills a Docker container by name.",
+  parameters: {
+    type: "object",
+    properties: {
+      container: {
+        type: "string",
+        description: "Docker container name",
+      },
+    },
+    required: ["container"],
+  },
+  execute: async ({ container }) => {
+    console.log(`Killing container ${container}`);
+    return { ok: true, killed: container };
+  },
+});
+
+// Register the new memory tools for Richard's memory system
+registerMemoryTools(tools);
+
 async function main() {
-  const client = new GeminiClient({});
+  const ai = new GeminiClient();
 
-  if (!client.apiKey) {
-    console.log('GEMINI_API_KEY not set. Demo will not call the external API.');
-    console.log('Set GEMINI_API_KEY in your environment to run a real demo.');
-    console.log('Example:');
-    console.log('  GEMINI_API_KEY=your_key node gemini_demo.js');
-    return;
-  }
+  const result = await ai.converse(
+    [
+      {
+        role: "user",
+        content:
+          "First, analyze the system to find the api-server's configuration and save that into your architectural knowledge. Then, add latency to api-server, record this attack in memory, and read the memory back.",
+      },
+    ],
+    tools,
+    {
+      system:
+        "You are an AI chaos monkey for dev environments. Use tools when needed. Use memory tools to track your actions and knowledge. Never affect production.",
+      maxTurns: 5,
+    }
+  );
 
-  const messages = [
-    { role: 'user', content: 'Please return a JSON object describing a tool call to get_time.' },
-  ];
-
-  try {
-    const res = await client.converse(messages, tools, 3);
-    console.log('Conversation result:');
-    console.dir(res, { depth: 4 });
-  } catch (err) {
-    console.error('Error during demo:', err);
-  }
+  console.log(result.text);
 }
 
-if (require.main === module) main();
+main();

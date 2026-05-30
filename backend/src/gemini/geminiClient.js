@@ -1,44 +1,84 @@
+const { appendToTrace } = require("../tools/toolModules/memoryTools");
+
+
 class GeminiClient {
   constructor(opts = {}) {
     this.apiKey = opts.apiKey || process.env.GEMINI_API_KEY;
-    this.baseUrl = opts.baseUrl || process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta2';
-    this.model = opts.model || process.env.GEMINI_MODEL || 'models/text-bison-001';
-    this.fetch = globalThis.fetch;
-    if (!this.fetch) throw new Error('global fetch is not available in this Node runtime. Use Node 18+ or provide a fetch polyfill.');
+    this.baseUrl =
+      opts.baseUrl ||
+      process.env.GEMINI_BASE_URL ||
+      "https://generativelanguage.googleapis.com/v1beta";
+
+    this.model = opts.model || process.env.GEMINI_MODEL || "gemini-3.5-flash";
+    this.fetch = opts.fetch || globalThis.fetch;
+
+    if (!this.apiKey) throw new Error("Missing GEMINI_API_KEY");
+    if (!this.fetch) throw new Error("Node 18+ fetch required");
   }
 
-  async request(action, body = {}) {
-    // action is typically 'generateText' or 'generateMessage' etc. We construct URL as: {baseUrl}/{model}:{action}
-    const endpoint = action.startsWith('http') ? action : `${this.baseUrl}/${this.model}:${action}`;
-    const headers = { 'Content-Type': 'application/json' };
+  endpoint(action = "generateContent") {
+    const model = this.model.startsWith("models/")
+      ? this.model
+      : `models/${this.model}`;
 
-    let url = endpoint;
-    if (this.apiKey) {
-      // If it looks like an OAuth token (starts with ya29) use Bearer, else send as key param
-      if (this.apiKey.startsWith('ya29') || this.apiKey.startsWith('Bearer ')) {
-        headers['Authorization'] = this.apiKey.startsWith('Bearer ') ? this.apiKey : `Bearer ${this.apiKey}`;
-      } else {
-        // append key as query param
-        url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}key=${encodeURIComponent(this.apiKey)}`;
-      }
+    return `${this.baseUrl}/${model}:${action}?key=${encodeURIComponent(
+      this.apiKey
+    )}`;
+  }
+
+  toGeminiContents(messages) {
+    return messages.map((m) => {
+      if (m.parts) return m;
+
+      return {
+        role: m.role === "assistant" || m.role === "model" ? "model" : "user",
+        parts: [{ text: String(m.content ?? "") }],
+      };
+    });
+  }
+
+  async generateContent(messages, opts = {}) {
+    const body = {
+      contents:
+        typeof messages === "string"
+          ? [{ role: "user", parts: [{ text: messages }] }]
+          : this.toGeminiContents(messages),
+      generationConfig: {
+        temperature: opts.temperature ?? 1.0,
+        maxOutputTokens: opts.maxOutputTokens ?? 4096,
+      },
+    };
+
+    if (opts.system) {
+      body.systemInstruction = {
+        parts: [{ text: opts.system }],
+      };
     }
 
-    const res = await this.fetch(url, {
-      method: 'POST',
-      headers,
+    if (opts.tools?.declarations?.().length) {
+      body.tools = [
+        {
+          functionDeclarations: opts.tools.declarations(),
+        },
+      ];
+
+      body.toolConfig = {
+        functionCallingConfig: {
+          mode: opts.toolMode || "AUTO",
+        },
+      };
+    }
+
+    const res = await this.fetch(this.endpoint(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
-    let data;
-    try {
-      data = await res.json();
-    } catch (e) {
-      const txt = await res.text();
-      throw new Error(`Gemini API returned non-json response: ${txt}`);
-    }
+    const data = await res.json();
 
     if (!res.ok) {
-      const err = new Error('Gemini API error');
+      const err = new Error(data?.error?.message || "Gemini API error");
       err.status = res.status;
       err.body = data;
       throw err;
@@ -47,73 +87,92 @@ class GeminiClient {
     return data;
   }
 
-  // Simple text generation helper – body shape is forwarded to the API so you can adapt as needed
-  async generateText(prompt, options = {}) {
-    const body = { input: prompt, ...options };
-    return this.request('generateText', body);
+  getText(resp) {
+    return (
+      resp?.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text || "")
+        .join("") || ""
+    );
   }
 
-  // Chat-style wrapper: messages is array of {role, content}
-  async generateMessage(messages = [], options = {}) {
-    const body = { messages, ...options };
-    return this.request('generateMessage', body);
+  getFunctionCalls(resp) {
+    const parts = resp?.candidates?.[0]?.content?.parts || [];
+
+    return parts
+      .filter((p) => p.functionCall)
+      .map((p) => p.functionCall);
   }
 
-  // A lightweight tool-invocation loop: sends messages, inspects response for a tool call, runs tool and continues
-  // tools may be either an array of {name, execute} or an object with .execute(name,args) method (ToolRegistry)
-  async converse(initialMessages = [], tools = [], maxTurns = 3) {
+  async chat(messages, opts = {}) {
+    const resp = await this.generateContent(messages, opts);
+    return {
+      text: this.getText(resp),
+      functionCalls: this.getFunctionCalls(resp),
+      raw: resp,
+    };
+  }
+
+  async converse(initialMessages = [], tools, opts = {}) {
     const messages = [...initialMessages];
+    const maxTurns = opts.maxTurns ?? 5;
 
-    for (let turn = 0; turn < maxTurns; turn++) {
-      const resp = await this.generateMessage(messages);
+    for (let i = 0; i < maxTurns; i++) {
+      const resp = await this.generateContent(messages, {
+        ...opts,
+        tools,
+      });
 
-      // heuristic: try common response containers
-      let assistantText = null;
-      if (resp?.candidates && resp.candidates[0]) assistantText = resp.candidates[0].content;
-      if (!assistantText && resp?.output && resp.output[0]) assistantText = resp.output[0].content;
-      if (!assistantText && typeof resp === 'string') assistantText = resp;
-      if (!assistantText) assistantText = JSON.stringify(resp);
+      const modelContent = resp.candidates?.[0]?.content;
+      if (!modelContent) throw new Error("No Gemini candidate content");
 
-      // push assistant message
-      messages.push({ role: 'assistant', content: assistantText });
+      messages.push(modelContent);
 
-      // try to detect a tool call encoded as JSON in the assistant text
-      let toolCall = null;
-      try {
-        const parsed = JSON.parse(assistantText);
-        if (parsed?.tool_call || (parsed?.name && parsed?.arguments)) toolCall = parsed;
-      } catch (e) {
-        // not json — ignore
+      const calls = this.getFunctionCalls(resp);
+
+      if (calls.length === 0) {
+        return {
+          text: this.getText(resp),
+          messages,
+          raw: resp,
+        };
       }
 
-      if (!toolCall) {
-        return { assistant: assistantText, raw: resp, messages };
-      }
+      const responseParts = [];
 
-      const name = toolCall.tool_call?.name || toolCall.name;
-      const args = toolCall.tool_call?.arguments || toolCall.arguments || {};
+      for (const call of calls) {
+        let result;
 
-      // execute the tool
-      let toolResult;
-      try {
-        if (typeof tools.execute === 'function') {
-          toolResult = await tools.execute(name, args);
-        } else if (Array.isArray(tools)) {
-          const t = tools.find((x) => x.name === name);
-          if (!t) throw new Error(`Tool not found: ${name}`);
-          toolResult = await t.execute(args);
-        } else {
-          throw new Error('Invalid tools container; provide an array or registry with .execute()');
+        await appendToTrace(`Tool Call: ${call.name} | Args: ${JSON.stringify(call.args || {})}`);
+
+        try {
+          result = await tools.execute(call.name, call.args || {});
+        } catch (err) {
+          result = {
+            error: err.message || String(err),
+          };
         }
-      } catch (err) {
-        toolResult = { error: String(err.message || err) };
+
+        responseParts.push({
+          functionResponse: {
+            name: call.name,
+            id: call.id,
+            response: {
+              result,
+            },
+          },
+        });
       }
 
-      // append tool result as assistant/system message and continue the loop
-      messages.push({ role: 'system', name: `tool:${name}`, content: JSON.stringify({ toolResult }) });
+      messages.push({
+        role: "user",
+        parts: responseParts,
+      });
     }
 
-    return { error: 'max turns reached', messages };
+    return {
+      error: "max turns reached",
+      messages,
+    };
   }
 }
 

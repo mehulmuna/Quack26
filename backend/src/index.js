@@ -1,3 +1,7 @@
+const GeminiClient = require("./gemini/geminiClient");
+const { runLoop } = require("./loop");
+const redAgentPrompt = require("./prompts/system/redAgent");
+const createTools = require("./tools/registerTools");
 
 require('dotenv').config();
 

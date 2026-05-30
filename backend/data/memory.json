@@ -1,0 +1,323 @@
+{
+  "knowledge": {
+    "api_server": {
+      "configuration": {
+        "name": "api-server",
+        "language": "Node.js/Go (inferred)",
+        "environment": "docker",
+        "exposed_ports": [
+          8080
+        ],
+        "health_check_path": "/health",
+        "network": "backend-network"
+      }
+    }
+  },
+  "active_state": {
+    "containers": [],
+    "toxics": [
+      {
+        "type": "latency",
+        "service": "api-server",
+        "latency_ms": 2000
+      },
+      {
+        "service": "api-server",
+        "milliseconds": 2000
+      },
+      {
+        "latency_ms": 2000,
+        "service": "api-server"
+      },
+      {
+        "milliseconds": 1500,
+        "service": "api-server"
+      }
+    ]
+  },
+  "history": [
+    {
+      "timestamp": "2026-05-30T21:29:58.801Z",
+      "type": "latency",
+      "service": "api-server",
+      "latency_ms": 2000
+    },
+    {
+      "timestamp": "2026-05-30T21:34:53.210Z",
+      "type": "toxic_added",
+      "service": "api-server",
+      "milliseconds": 2000
+    },
+    {
+      "timestamp": "2026-05-30T21:37:26.957Z",
+      "type": "toxic_added",
+      "latency_ms": 2000,
+      "service": "api-server"
+    },
+    {
+      "timestamp": "2026-05-30T22:19:14.982Z",
+      "type": "toxic_added",
+      "milliseconds": 1500,
+      "service": "api-server"
+    }
+  ],
+  "tool_logs": [
+    {
+      "timestamp": "2026-05-30T21:37:24.993Z",
+      "tool_name": "add_latency",
+      "args": {
+        "service": "api-server",
+        "milliseconds": 2000
+      },
+      "response": {
+        "result": {
+          "ok": true,
+          "milliseconds": 2000,
+          "service": "api-server"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:37:28.696Z",
+      "tool_name": "memory_record_intervention",
+      "args": {
+        "details": {
+          "latency_ms": 2000,
+          "service": "api-server"
+        },
+        "type": "toxic_added"
+      },
+      "response": {
+        "result": {
+          "state": {
+            "toxics": [
+              {
+                "type": "latency",
+                "service": "api-server",
+                "latency_ms": 2000
+              },
+              {
+                "service": "api-server",
+                "milliseconds": 2000
+              },
+              {
+                "service": "api-server",
+                "latency_ms": 2000
+              }
+            ],
+            "containers": []
+          },
+          "ok": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:42:11.012Z",
+      "tool_name": "memory_read",
+      "args": {},
+      "response": {
+        "result": {
+          "knowledge": {},
+          "tool_logs": [
+            {
+              "timestamp": "2026-05-30T21:37:24.993Z",
+              "tool_name": "add_latency",
+              "response": {
+                "result": {
+                  "milliseconds": 2000,
+                  "ok": true,
+                  "service": "api-server"
+                }
+              },
+              "args": {
+                "milliseconds": 2000,
+                "service": "api-server"
+              }
+            },
+            {
+              "timestamp": "2026-05-30T21:37:28.696Z",
+              "tool_name": "memory_record_intervention",
+              "response": {
+                "result": {
+                  "ok": true,
+                  "state": {
+                    "containers": [],
+                    "toxics": [
+                      {
+                        "type": "latency",
+                        "latency_ms": 2000,
+                        "service": "api-server"
+                      },
+                      {
+                        "milliseconds": 2000,
+                        "service": "api-server"
+                      },
+                      {
+                        "service": "api-server",
+                        "latency_ms": 2000
+                      }
+                    ]
+                  }
+                }
+              },
+              "args": {
+                "type": "toxic_added",
+                "details": {
+                  "service": "api-server",
+                  "latency_ms": 2000
+                }
+              }
+            }
+          ],
+          "active_state": {
+            "containers": [],
+            "toxics": [
+              {
+                "type": "latency",
+                "service": "api-server",
+                "latency_ms": 2000
+              },
+              {
+                "milliseconds": 2000,
+                "service": "api-server"
+              },
+              {
+                "service": "api-server",
+                "latency_ms": 2000
+              }
+            ]
+          },
+          "history": [
+            {
+              "service": "api-server",
+              "latency_ms": 2000,
+              "timestamp": "2026-05-30T21:29:58.801Z",
+              "type": "latency"
+            },
+            {
+              "timestamp": "2026-05-30T21:34:53.210Z",
+              "service": "api-server",
+              "milliseconds": 2000,
+              "type": "toxic_added"
+            },
+            {
+              "latency_ms": 2000,
+              "timestamp": "2026-05-30T21:37:26.957Z",
+              "service": "api-server",
+              "type": "toxic_added"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:42:14.396Z",
+      "tool_name": "memory_read",
+      "args": {
+        "key": "knowledge"
+      },
+      "response": {
+        "result": {}
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:52:48.552Z",
+      "tool_name": "memory_read",
+      "args": {},
+      "response": {
+        "result": {
+          "active_state": 0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:52:52.528Z",
+      "tool_name": "memory_update_knowledge",
+      "args": {
+        "info": {
+          "api_server": {
+            "configuration": {
+              "health_check_path": "/health",
+              "environment": "docker",
+              "language": "Node.js/Go (inferred)",
+              "exposed_ports": [
+                8080
+              ],
+              "network": "backend-network",
+              "name": "api-server"
+            }
+          }
+        }
+      },
+      "response": {
+        "result": {
+          "ok": true,
+          "knowledge": {
+            "api_server": {
+              "configuration": {
+                "name": "api-server",
+                "exposed_ports": [
+                  8080
+                ],
+                "network": "backend-network",
+                "language": "Node.js/Go (inferred)",
+                "environment": "docker",
+                "health_check_path": "/health"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T22:09:11.358Z",
+      "tool_name": "memory_read",
+      "args": {},
+      "response": {
+        "result": {
+          "active_state": 0,
+          "knowledge": 0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T22:09:15.820Z",
+      "tool_name": "memory_update_knowledge",
+      "args": {
+        "info": {
+          "api_server": {
+            "configuration": {
+              "name": "api-server",
+              "exposed_ports": [
+                8080
+              ],
+              "health_check_path": "/health",
+              "language": "Node.js/Go (inferred)",
+              "environment": "docker",
+              "network": "backend-network"
+            }
+          }
+        }
+      },
+      "response": {
+        "result": {
+          "knowledge": {
+            "api_server": {
+              "configuration": {
+                "environment": "docker",
+                "network": "backend-network",
+                "name": "api-server",
+                "exposed_ports": [
+                  8080
+                ],
+                "health_check_path": "/health",
+                "language": "Node.js/Go (inferred)"
+              }
+            }
+          },
+          "ok": true
+        }
+      }
+    }
+  ]
+}

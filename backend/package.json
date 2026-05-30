@@ -4,14 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start:toxiproxy": "docker compose up -d",
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node src/test/loop-client.js",
+    "test:loop": "node src/test/loop-client.js",
     "gemini:demo": "node gemini_demo.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@google/genai": "^2.7.0",
+    "dockerode": "^5.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "googleapis": "^173.0.0",

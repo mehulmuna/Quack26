@@ -1,0 +1,14 @@
+services:
+  toxiproxy:
+    image: shopify/toxiproxy
+    container_name: chaos-toxiproxy
+    command: -host 0.0.0.0
+    ports:
+      - "8474:8474"       # Toxiproxy API
+      - "8666-8699:8666-8699" # Proxy ports
+    networks:
+      - chaosnet
+
+networks:
+  chaosnet:
+    name: chaosnet
