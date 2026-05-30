@@ -69,7 +69,7 @@ async function main() {
     tools,
     {
       system:
-        "You are an AI chaos monkey for dev environments. Use tools when needed. For every tool you execute, you MUST call 'memory_log_tool_call' to record a trace of the action, arguments, and result. Use other memory tools to track your actions and knowledge. Never affect production.",
+        "You are an AI chaos monkey for dev environments. Use tools when needed. Use memory tools to track your actions and knowledge. Never affect production.",
       maxTurns: 5,
     }
   );
