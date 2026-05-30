@@ -2,6 +2,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 
 const MEMORY_FILE = path.resolve(__dirname, "../../../data/memory.json");
+const TRACE_FILE = path.resolve(__dirname, "../../../data/trace.txt");
 
 /**
  * Helper to ensure the memory file exists and read it.
@@ -31,6 +32,20 @@ async function readMemory() {
  */
 async function writeMemory(data) {
   await fs.writeFile(MEMORY_FILE, JSON.stringify(data, null, 2), "utf-8");
+}
+
+/**
+ * Helper to append a line to the trace file.
+ */
+async function appendToTrace(text) {
+  try {
+    const dir = path.dirname(TRACE_FILE);
+    await fs.mkdir(dir, { recursive: true });
+    const timestamp = new Date().toISOString();
+    await fs.appendFile(TRACE_FILE, `[${timestamp}] ${text}\n`, "utf-8");
+  } catch (err) {
+    console.error("Failed to write to trace.txt:", err);
+  }
 }
 
 function registerMemoryTools(tools) {
@@ -124,6 +139,7 @@ function registerMemoryTools(tools) {
       const cleared = { ...memory.active_state };
       memory.active_state = { containers: [], toxics: [] };
       memory.tool_logs = [];
+      await fs.unlink(TRACE_FILE).catch(() => {}); // Reset trace file
       await writeMemory(memory);
       return { ok: true, cleared };
     }
@@ -135,4 +151,5 @@ module.exports = {
   readMemory,
   writeMemory,
   MEMORY_FILE,
+  appendToTrace,
 };

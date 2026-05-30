@@ -7,6 +7,7 @@ const { registerRunAppTool } = require("./toolModules/runAppTool");
 const { registerRunCodeTool } = require("./toolModules/runCode");
 const { registerCypressTools } = require("./toolModules/cypressTools");
 const { registerToxiproxyTools } = require("./toolModules/toxiproxyTools");
+const { registerCodexTool } = require("./toolModules/codexTool");
 
 function createTools() {
   const tools = new ToolRegistry();
@@ -17,6 +18,9 @@ function createTools() {
   registerRunAppTool(tools);
   registerRunCodeTool(tools);
   registerCypressTools(tools);
+
+  if(process.env.CODEX)
+    registerCodexTool(tools);
 
   registerToxiproxyTools(tools);
   registerDockerTools(tools);

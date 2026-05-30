@@ -2,14 +2,14 @@
   "knowledge": {
     "api_server": {
       "configuration": {
+        "name": "api-server",
+        "language": "Node.js/Go (inferred)",
         "environment": "docker",
         "exposed_ports": [
           8080
         ],
-        "language": "Node.js/Go (inferred)",
-        "network": "backend-network",
         "health_check_path": "/health",
-        "name": "api-server"
+        "network": "backend-network"
       }
     }
   },
@@ -37,6 +37,10 @@
       },
       {
         "toxicity": 0.25,
+        "service": "api-server"
+      },
+      {
+        "milliseconds": 1500,
         "service": "api-server"
       }
     ]
@@ -76,6 +80,12 @@
       "timestamp": "2026-05-30T22:14:09.084Z",
       "type": "container_stop",
       "container": "api-server"
+    },
+    {
+      "timestamp": "2026-05-30T22:19:14.982Z",
+      "type": "toxic_added",
+      "milliseconds": 1500,
+      "service": "api-server"
     }
   ],
   "tool_logs": [
@@ -283,6 +293,56 @@
               }
             }
           }
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T22:09:11.358Z",
+      "tool_name": "memory_read",
+      "args": {},
+      "response": {
+        "result": {
+          "active_state": 0,
+          "knowledge": 0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T22:09:15.820Z",
+      "tool_name": "memory_update_knowledge",
+      "args": {
+        "info": {
+          "api_server": {
+            "configuration": {
+              "name": "api-server",
+              "exposed_ports": [
+                8080
+              ],
+              "health_check_path": "/health",
+              "language": "Node.js/Go (inferred)",
+              "environment": "docker",
+              "network": "backend-network"
+            }
+          }
+        }
+      },
+      "response": {
+        "result": {
+          "knowledge": {
+            "api_server": {
+              "configuration": {
+                "environment": "docker",
+                "network": "backend-network",
+                "name": "api-server",
+                "exposed_ports": [
+                  8080
+                ],
+                "health_check_path": "/health",
+                "language": "Node.js/Go (inferred)"
+              }
+            }
+          },
+          "ok": true
         }
       }
     }
