@@ -3,7 +3,7 @@ const { spawn } = require("node:child_process");
 function registerRunAppTool(tools) {
   tools.register({
     name: "run_app",
-    description: "Run a command-line application with optional arguments.",
+    description: "Run a command-line application with optional arguments. Use this to interact with the application you are testing with chaos engineering.",
     parameters: {
       type: "object",
       properties: {

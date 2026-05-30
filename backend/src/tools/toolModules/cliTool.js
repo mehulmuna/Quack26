@@ -54,7 +54,7 @@ function spawnProcess(command, args, options = {}) {
 function registerCliTool(tools) {
   tools.register({
     name: "run_cli",
-    description: "Run an arbitrary CLI command with arguments, working directory, environment variables, and optional stdin.",
+    description: "Run an arbitrary CLI command with arguments, working directory, environment variables, and optional stdin. Use this to interact with the application you are testing with chaos engineering.",
     parameters: {
       type: "object",
       properties: {

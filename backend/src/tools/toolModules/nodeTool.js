@@ -3,7 +3,7 @@ const { execFile } = require("node:child_process");
 function registerNodeTool(tools) {
   tools.register({
     name: "run_node",
-    description: "Run a Node.js script with optional arguments.",
+    description: "Run a Node.js script with optional arguments. Use this to interact with the application you are testing with chaos engineering.",
     parameters: {
       type: "object",
       properties: {

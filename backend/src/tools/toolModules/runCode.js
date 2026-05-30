@@ -59,7 +59,7 @@ function spawnProcess(command, args, options = {}) {
 function registerRunCodeTool(tools) {
   tools.register({
     name: "run_code",
-    description: "Run JavaScript or Python code using an inline script or provided script path.",
+    description: "Run JavaScript or Python code using an inline script or provided script path. Use this to interact with the application you are testing with chaos engineering.",
     parameters: {
       type: "object",
       properties: {
