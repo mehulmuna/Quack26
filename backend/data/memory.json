@@ -1,0 +1,214 @@
+{
+  "knowledge": {
+    "api_server": {
+      "configuration": {
+        "exposed_ports": [
+          8080
+        ],
+        "network": "backend-network",
+        "language": "Node.js/Go (inferred)",
+        "environment": "docker",
+        "health_check_path": "/health",
+        "name": "api-server"
+      }
+    }
+  },
+  "active_state": {
+    "containers": [],
+    "toxics": [
+      {
+        "type": "latency",
+        "service": "api-server",
+        "latency_ms": 2000
+      },
+      {
+        "service": "api-server",
+        "milliseconds": 2000
+      },
+      {
+        "latency_ms": 2000,
+        "service": "api-server"
+      }
+    ]
+  },
+  "history": [
+    {
+      "timestamp": "2026-05-30T21:29:58.801Z",
+      "type": "latency",
+      "service": "api-server",
+      "latency_ms": 2000
+    },
+    {
+      "timestamp": "2026-05-30T21:34:53.210Z",
+      "type": "toxic_added",
+      "service": "api-server",
+      "milliseconds": 2000
+    },
+    {
+      "timestamp": "2026-05-30T21:37:26.957Z",
+      "type": "toxic_added",
+      "latency_ms": 2000,
+      "service": "api-server"
+    }
+  ],
+  "tool_logs": [
+    {
+      "timestamp": "2026-05-30T21:37:24.993Z",
+      "tool_name": "add_latency",
+      "args": {
+        "service": "api-server",
+        "milliseconds": 2000
+      },
+      "response": {
+        "result": {
+          "ok": true,
+          "milliseconds": 2000,
+          "service": "api-server"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:37:28.696Z",
+      "tool_name": "memory_record_intervention",
+      "args": {
+        "details": {
+          "latency_ms": 2000,
+          "service": "api-server"
+        },
+        "type": "toxic_added"
+      },
+      "response": {
+        "result": {
+          "state": {
+            "toxics": [
+              {
+                "type": "latency",
+                "service": "api-server",
+                "latency_ms": 2000
+              },
+              {
+                "service": "api-server",
+                "milliseconds": 2000
+              },
+              {
+                "service": "api-server",
+                "latency_ms": 2000
+              }
+            ],
+            "containers": []
+          },
+          "ok": true
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:42:11.012Z",
+      "tool_name": "memory_read",
+      "args": {},
+      "response": {
+        "result": {
+          "knowledge": {},
+          "tool_logs": [
+            {
+              "timestamp": "2026-05-30T21:37:24.993Z",
+              "tool_name": "add_latency",
+              "response": {
+                "result": {
+                  "milliseconds": 2000,
+                  "ok": true,
+                  "service": "api-server"
+                }
+              },
+              "args": {
+                "milliseconds": 2000,
+                "service": "api-server"
+              }
+            },
+            {
+              "timestamp": "2026-05-30T21:37:28.696Z",
+              "tool_name": "memory_record_intervention",
+              "response": {
+                "result": {
+                  "ok": true,
+                  "state": {
+                    "containers": [],
+                    "toxics": [
+                      {
+                        "type": "latency",
+                        "latency_ms": 2000,
+                        "service": "api-server"
+                      },
+                      {
+                        "milliseconds": 2000,
+                        "service": "api-server"
+                      },
+                      {
+                        "service": "api-server",
+                        "latency_ms": 2000
+                      }
+                    ]
+                  }
+                }
+              },
+              "args": {
+                "type": "toxic_added",
+                "details": {
+                  "service": "api-server",
+                  "latency_ms": 2000
+                }
+              }
+            }
+          ],
+          "active_state": {
+            "containers": [],
+            "toxics": [
+              {
+                "type": "latency",
+                "service": "api-server",
+                "latency_ms": 2000
+              },
+              {
+                "milliseconds": 2000,
+                "service": "api-server"
+              },
+              {
+                "service": "api-server",
+                "latency_ms": 2000
+              }
+            ]
+          },
+          "history": [
+            {
+              "service": "api-server",
+              "latency_ms": 2000,
+              "timestamp": "2026-05-30T21:29:58.801Z",
+              "type": "latency"
+            },
+            {
+              "timestamp": "2026-05-30T21:34:53.210Z",
+              "service": "api-server",
+              "milliseconds": 2000,
+              "type": "toxic_added"
+            },
+            {
+              "latency_ms": 2000,
+              "timestamp": "2026-05-30T21:37:26.957Z",
+              "service": "api-server",
+              "type": "toxic_added"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "timestamp": "2026-05-30T21:42:14.396Z",
+      "tool_name": "memory_read",
+      "args": {
+        "key": "knowledge"
+      },
+      "response": {
+        "result": {}
+      }
+    }
+  ]
+}
