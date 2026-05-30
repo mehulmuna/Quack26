@@ -236,6 +236,85 @@ function registerToxiproxyTools(tools) {
             };
         },
     });
+
+    tools.register({
+        name: "docker_block_domain",
+        description: "Block a domain inside a Docker container by mapping it to 127.0.0.1 in /etc/hosts.",
+        parameters: {
+            type: "object",
+            properties: {
+                container: { type: "string" },
+                domain: { type: "string" },
+            },
+            required: ["container", "domain"],
+        },
+        execute: async ({ container, domain }) => {
+            const marker = `# chaos-block-domain:${domain}`;
+
+            const script = `
+      set -e
+      if ! grep -q "${marker}" /etc/hosts; then
+        echo "127.0.0.1 ${domain} ${marker}" >> /etc/hosts
+      fi
+      cat /etc/hosts
+    `;
+
+            const result = await run("docker", [
+                "exec",
+                container,
+                "sh",
+                "-c",
+                script,
+            ]);
+
+            return {
+                ok: true,
+                container,
+                domain,
+                stdout: result.stdout,
+                stderr: result.stderr,
+            };
+        },
+    });
+
+    tools.register({
+        name: "docker_unblock_domain",
+        description: "Remove a domain block from a Docker container's /etc/hosts.",
+        parameters: {
+            type: "object",
+            properties: {
+                container: { type: "string" },
+                domain: { type: "string" },
+            },
+            required: ["container", "domain"],
+        },
+        execute: async ({ container, domain }) => {
+            const marker = `# chaos-block-domain:${domain}`;
+
+            const script = `
+      set -e
+      grep -v "${marker}" /etc/hosts > /tmp/hosts.clean
+      cat /tmp/hosts.clean > /etc/hosts
+      cat /etc/hosts
+    `;
+
+            const result = await run("docker", [
+                "exec",
+                container,
+                "sh",
+                "-c",
+                script,
+            ]);
+
+            return {
+                ok: true,
+                container,
+                domain,
+                stdout: result.stdout,
+                stderr: result.stderr,
+            };
+        },
+    });
 }
 
 module.exports = {
