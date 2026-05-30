@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start:toxiproxy": "docker compose up -d",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node src/test/loop-client.js",
+    "test:loop": "node src/test/loop-client.js",
     "gemini:demo": "node gemini_demo.js"
   },
   "author": "",

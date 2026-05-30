@@ -1,159 +1,242 @@
-const { GoogleGenAI } = require("@google/genai");
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Normalize chat messages into Gemini content objects.
- * Accepts { role, content } or pre-built { role, parts } entries.
- */
-function toGeminiContents(messages) {
-  return messages.map((m) => {
-    if (m.parts) return m;
-    return {
-      role: m.role === "assistant" || m.role === "model" ? "model" : "user",
-      parts: [{ text: String(m.content ?? "") }],
-    };
-  });
+function getText(resp) {
+	return (
+		resp?.candidates?.[0]?.content?.parts
+			?.map((p) => p.text || "")
+			.join("") || ""
+	);
 }
 
-/**
- * Resolve a tool executor from a ToolRegistry or a plain name -> fn map.
- */
-function createToolExecutor(tools) {
-  if (!tools) return null;
-
-  if (typeof tools.execute === "function" && typeof tools.declarations === "function") {
-    return (name, args) => tools.execute(name, args);
-  }
-
-  if (typeof tools === "object") {
-    return async (name, args) => {
-      const fn = tools[name];
-      if (!fn) throw new Error(`Tool not found: ${name}`);
-      return await fn(args);
-    };
-  }
-
-  throw new Error("tools must be a ToolRegistry or a name -> execute map");
+function getFunctionCalls(resp) {
+	const parts = resp?.candidates?.[0]?.content?.parts || [];
+	return parts.filter((p) => p.functionCall).map((p) => p.functionCall);
 }
 
-function getToolDeclarations(tools) {
-  if (!tools) return [];
-  if (typeof tools.declarations === "function") return tools.declarations();
-  return Object.keys(tools).map((name) => ({
-    name,
-    description: `Execute the ${name} function.`,
-    parameters: { type: "object", properties: {} },
-  }));
+function createToolAdapter(tools) {
+	if (!tools) {
+		return {
+			declarations: () => [],
+			execute: async (name) => {
+				throw new Error(`Tool not found: ${name}`);
+			},
+		};
+	}
+
+	if (typeof tools.execute === "function") return tools;
+
+	if (typeof tools === "object") {
+		return {
+			declarations: () =>
+				Object.keys(tools).map((name) => ({
+					name,
+					description: `Execute the ${name} function.`,
+					parameters: {
+						type: "object",
+						properties: {},
+					},
+				})),
+			execute: async (name, args) => {
+				const fn = tools[name];
+				if (!fn) throw new Error(`Tool not found: ${name}`);
+				return await fn(args || {});
+			},
+		};
+	}
+
+	throw new Error("tools must be a ToolRegistry or a name -> execute map");
 }
 
-/**
- * Asynchronous agent loop using the Gemini SDK.
- *
- * @param {object} opts
- * @param {string} opts.systemPrompt - System instruction for the model
- * @param {Array} [opts.messages] - Initial conversation ({ role, content } or Gemini contents)
- * @param {import('./tools/ToolRegistry')|Record<string, Function>} [opts.tools] - Tool registry or execute map
- * @param {string} [opts.model] - Model id (default: GEMINI_MODEL or gemini-2.5-flash)
- * @param {number} [opts.maxTurns] - Max model rounds (default: 10)
- * @param {string} [opts.apiKey] - Gemini API key (default: GEMINI_API_KEY)
- * @returns {Promise<{ text: string, messages: Array, turns: number, raw: object }>}
- */
-async function runAgentLoop(opts = {}) {
-  const {
-    systemPrompt,
-    messages: initialMessages = [],
-    tools,
-    model = process.env.GEMINI_MODEL || "gemini-2.5-flash",
-    maxTurns = 10,
-    apiKey = process.env.GEMINI_API_KEY,
-  } = opts;
+function normalizeMessages(messages = []) {
+	return messages.map((m) => {
+		if (m.parts) return m;
 
-  if (!systemPrompt) throw new Error("systemPrompt is required");
-  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-
-  const ai = new GoogleGenAI({ apiKey });
-  const executeTool = createToolExecutor(tools);
-  const declarations = getToolDeclarations(tools);
-  const contents = toGeminiContents(initialMessages);
-
-  const config = {
-    systemInstruction: systemPrompt,
-  };
-
-  if (declarations.length > 0) {
-    config.tools = [{ functionDeclarations: declarations }];
-    config.toolConfig = {
-      functionCallingConfig: { mode: "AUTO" },
-    };
-  }
-
-  let lastResponse = null;
-
-  for (let turn = 0; turn < maxTurns; turn++) {
-    lastResponse = await ai.models.generateContent({
-      model,
-      contents,
-      config,
-    });
-
-    const functionCalls = lastResponse.functionCalls ?? [];
-
-    if (functionCalls.length === 0) {
-      return {
-        text: lastResponse.text ?? "",
-        messages: contents,
-        turns: turn + 1,
-        raw: lastResponse,
-      };
-    }
-
-    if (!executeTool) {
-      throw new Error(
-        `Model requested ${functionCalls.length} tool call(s) but no tools were provided`
-      );
-    }
-
-    const modelContent = lastResponse.candidates?.[0]?.content;
-    if (modelContent) {
-      contents.push(modelContent);
-    } else {
-      contents.push({
-        role: "model",
-        parts: functionCalls.map((call) => ({ functionCall: call })),
-      });
-    }
-
-    const responseParts = [];
-
-    for (const call of functionCalls) {
-      let result;
-      try {
-        result = await executeTool(call.name, call.args ?? {});
-      } catch (err) {
-        result = { error: err.message || String(err) };
-      }
-
-      responseParts.push({
-        functionResponse: {
-          name: call.name,
-          id: call.id,
-          response: { result },
-        },
-      });
-    }
-
-    contents.push({
-      role: "user",
-      parts: responseParts,
-    });
-  }
-
-  return {
-    text: lastResponse?.text ?? "",
-    messages: contents,
-    turns: maxTurns,
-    error: "max turns reached",
-    raw: lastResponse,
-  };
+		return {
+			role: m.role === "assistant" || m.role === "model" ? "model" : "user",
+			parts: [{ text: String(m.content ?? "") }],
+		};
+	});
 }
 
-module.exports = { runAgentLoop, toGeminiContents };
+function createGenerateOptions(opts, toolAdapter) {
+	const {
+		client,
+		messages,
+		prompt,
+		maxTurns,
+		maxToolTurns,
+		intervalMs,
+		stopOnError,
+		stopWhenDone,
+		system,
+		systemPrompt,
+		...generateOptions
+	} = opts;
+
+	return {
+		...generateOptions,
+		tools: toolAdapter,
+	};
+}
+
+async function runLoop(client, tools, opts = {}) {
+	if (!client || typeof client.generateContent !== "function") {
+		throw new Error("runLoop requires a client with generateContent(messages, opts)");
+	}
+
+	const maxTurns = opts.maxTurns ?? 10;
+	const intervalMs = opts.intervalMs ?? 10000;
+
+	const messages = normalizeMessages(opts.messages || []);
+	const systemPrompt = opts.systemPrompt ?? opts.system;
+
+	if (systemPrompt) {
+		messages.unshift({
+			role: "user",
+			parts: [{ text: `SYSTEM:\n${String(systemPrompt)}` }],
+		});
+	}
+
+	if (opts.prompt) {
+		messages.push({
+			role: "user",
+			parts: [{ text: String(opts.prompt) }],
+		});
+	}
+
+	if (messages.length === 0) {
+		throw new Error("runLoop requires opts.prompt, opts.systemPrompt, or opts.messages");
+	}
+
+	const turns = [];
+
+	for (let i = 0; i < maxTurns; i++) {
+		const result = await runTurn(client, tools, {
+			...opts,
+			prompt: undefined,
+			messages,
+		});
+
+		turns.push(result);
+
+		if (result.error && opts.stopOnError !== false) break;
+		if (opts.stopWhenDone !== false && result.done) break;
+
+		if (i < maxTurns - 1 && intervalMs > 0) {
+			await wait(intervalMs);
+		}
+	}
+
+	return {
+		messages,
+		turns,
+		text: turns.at(-1)?.text || "",
+		error: turns.at(-1)?.error,
+		done: turns.at(-1)?.done ?? false,
+	};
+}
+
+async function runTurn(client, tools, opts = {}) {
+	const messages = opts.messages;
+
+	if (!Array.isArray(messages)) {
+		throw new Error("messages must be an array");
+	}
+
+	const toolAdapter = createToolAdapter(tools);
+	const maxToolTurns = opts.maxToolTurns ?? 5;
+	const generateOptions = createGenerateOptions(opts, toolAdapter);
+
+	const toolResults = [];
+	let raw = null;
+
+	for (let turn = 0; turn < maxToolTurns; turn++) {
+		raw = await client.generateContent(messages, generateOptions);
+
+		const modelContent = raw?.candidates?.[0]?.content;
+		if (!modelContent) {
+			return {
+				text: "",
+				messages,
+				raw,
+				toolResults,
+				turns: turn + 1,
+				done: false,
+				error: "No model content returned",
+			};
+		}
+
+		messages.push(modelContent);
+
+		const calls =
+			typeof client.getFunctionCalls === "function"
+				? client.getFunctionCalls(raw)
+				: getFunctionCalls(raw);
+
+		if (!calls.length) {
+			const text =
+				typeof client.getText === "function" ? client.getText(raw) : getText(raw);
+
+			return {
+				text,
+				messages,
+				raw,
+				toolResults,
+				turns: turn + 1,
+				done: true,
+			};
+		}
+
+		const responseParts = [];
+
+		for (const call of calls) {
+			let result;
+
+			try {
+				result = await toolAdapter.execute(call.name, call.args || {});
+			} catch (err) {
+				result = {
+					error: err.message || String(err),
+				};
+			}
+
+			toolResults.push({
+				name: call.name,
+				args: call.args || {},
+				result,
+			});
+
+			responseParts.push({
+				functionResponse: {
+					name: call.name,
+					response: {
+						result,
+					},
+				},
+			});
+		}
+
+		messages.push({
+			role: "user",
+			parts: responseParts,
+		});
+	}
+
+	return {
+		text: "",
+		messages,
+		raw,
+		toolResults,
+		turns: maxToolTurns,
+		done: false,
+		error: "max tool turns reached",
+	};
+}
+
+module.exports = {
+	runLoop,
+	runTurn,
+	getText,
+	getFunctionCalls,
+	normalizeMessages,
+};

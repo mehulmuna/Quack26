@@ -29,8 +29,8 @@ class GeminiClient {
       if (m.parts) return m;
 
       return {
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
+        role: m.role === "assistant" || m.role === "model" ? "model" : "user",
+        parts: [{ text: String(m.content ?? "") }],
       };
     });
   }
