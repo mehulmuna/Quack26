@@ -2,13 +2,13 @@
   "knowledge": {
     "api_server": {
       "configuration": {
-        "environment": "docker",
-        "health_check_path": "/health",
         "name": "api-server",
         "language": "Node.js/Go (inferred)",
+        "environment": "docker",
         "exposed_ports": [
           8080
         ],
+        "health_check_path": "/health",
         "network": "backend-network"
       }
     }
@@ -27,6 +27,10 @@
       },
       {
         "latency_ms": 2000,
+        "service": "api-server"
+      },
+      {
+        "milliseconds": 1500,
         "service": "api-server"
       }
     ]
@@ -48,6 +52,12 @@
       "timestamp": "2026-05-30T21:37:26.957Z",
       "type": "toxic_added",
       "latency_ms": 2000,
+      "service": "api-server"
+    },
+    {
+      "timestamp": "2026-05-30T22:19:14.982Z",
+      "type": "toxic_added",
+      "milliseconds": 1500,
       "service": "api-server"
     }
   ],
