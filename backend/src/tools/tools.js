@@ -3,26 +3,33 @@ class ToolRegistry {
     this.tools = new Map();
   }
 
-  register(tool) {
-    if (!tool || !tool.name || typeof tool.execute !== 'function') {
-      throw new Error('Tool must be an object with a `name` and `execute` function.');
-    }
-    this.tools.set(tool.name, tool);
+  register({ name, description, parameters, execute }) {
+    if (!name || !execute) throw new Error("Tool needs name + execute");
+
+    this.tools.set(name, {
+      declaration: {
+        name,
+        description,
+        parameters: parameters || {
+          type: "object",
+          properties: {},
+        },
+      },
+      execute,
+    });
+
+    return this;
   }
 
-  get(name) {
-    return this.tools.get(name);
+  declarations() {
+    return [...this.tools.values()].map((t) => t.declaration);
   }
 
-  async execute(name, args) {
-    const t = this.get(name);
-    if (!t) throw new Error(`Tool not found: ${name}`);
-    return await t.execute(args);
-  }
-
-  list() {
-    return Array.from(this.tools.values()).map((t) => ({ name: t.name, description: t.description }));
+  async execute(name, args = {}) {
+    const tool = this.tools.get(name);
+    if (!tool) throw new Error(`Tool not found: ${name}`);
+    return await tool.execute(args);
   }
 }
 
-module.exports = new ToolRegistry();
+module.exports = ToolRegistry;
