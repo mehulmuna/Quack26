@@ -7,7 +7,7 @@ export default function AnalysisReports({ reports = [], onSelect }) {
   const analysisReports = reports.filter(r => r.report_type === "analysis");
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 h-full">
       <div className="flex items-center gap-2">
         <FileText className="w-3.5 h-3.5 text-accent" />
         <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
@@ -18,7 +18,7 @@ export default function AnalysisReports({ reports = [], onSelect }) {
         </Badge>
       </div>
 
-      <ScrollArea className="h-40">
+      <ScrollArea className="h-full">
         <div className="space-y-1 pr-2">
           {analysisReports.map((report) => (
             <button
