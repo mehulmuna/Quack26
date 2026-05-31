@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const RING_COUNT = 3;
 
-export default function OrbVisual({ isRunning, servicesCount = 0 }) {
+export default function OrbVisual({ isRunning, count = 0 }) {
   return (
     <div className="relative flex items-center justify-center h-48">
       {/* Outer glow */}
@@ -68,7 +68,7 @@ export default function OrbVisual({ isRunning, servicesCount = 0 }) {
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
         <span className="font-mono text-sm font-bold text-foreground">
-          {servicesCount}
+          {count}
         </span>
       </motion.div>
 

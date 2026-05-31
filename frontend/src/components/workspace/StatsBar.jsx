@@ -21,6 +21,7 @@ export default function StatsBar({ toolsCalled = 0, tokensUsed = 0, duration = 0
   };
 
   const formatTokens = (t) => {
+    if (!t || t <= 0) return "-";
     if (t >= 1000) return `${(t / 1000).toFixed(1)}k`;
     return t.toString();
   };
