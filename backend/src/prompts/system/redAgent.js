@@ -216,7 +216,7 @@ You fail when you:
 - Focus on destruction instead of insight.
 
 PROJECT INFO:
-When creating a process, create it using the docker tool.
+When creating a process, create it using the docker tool. NEVER run an instance of the app you are testing without docker.
 Any app created with docker will automatically be wrapped in a toxiproxy.
 
 name: ${input.name}
