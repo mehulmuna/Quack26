@@ -1,138 +1,209 @@
-import { useEffect, useState } from 'react';
-import { getDashboardData } from '../services/api';
-import Header from '../components/Header';
-import StatCard from '../components/StatCard';
-import ServiceCard from '../components/ServiceCard';
-import ExperimentPanel from '../components/ExperimentPanel';
-import ActivityFeed from '../components/ActivityFeed';
-import Infrastructure from '../components/Infrastructure';
-import ActiveEffects from '../components/ActiveEffects';
-import Issues from '../components/Issues';
-
-function riskTone(risk) {
-  if (risk >= 70) return 'from-rose-500 to-orange-400';
-  if (risk >= 40) return 'from-amber-400 to-yellow-300';
-  return 'from-emerald-400 to-cyan-300';
-}
-
-function statusTone(status) {
-  if (status === 'Running' || status === 'Healthy') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200';
-  if (status === 'Degraded') return 'border-amber-400/30 bg-amber-400/10 text-amber-200';
-  return 'border-rose-400/30 bg-rose-400/10 text-rose-200';
-}
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Separator } from "@/components/ui/separator";
+import { scanProjectServices, analyzeService } from "@/lib/scanService";
+import OrbVisual from "@/components/workspace/OrbVisual";
+import RunControls from "@/components/workspace/RunControls";
+import ProjectInputs from "@/components/workspace/ProjectInputs";
+import StatsBar from "@/components/workspace/StatsBar";
+import ServicesList from "@/components/workspace/ServicesList";
+import ReportList from "@/components/sidebar/ReportList";
+import ReportViewer from "@/components/sidebar/ReportViewer";
+import TraceLog from "@/components/memory/TraceLog";
+import AnalysisReports from "@/components/memory/AnalysisReports";
+import { Brain, Scan } from "lucide-react";
 
 export default function Dashboard() {
-  const [dashboard, setDashboard] = useState(null);
+  const queryClient = useQueryClient();
+  const [isRunning, setIsRunning] = useState(false);
+  const [currentService, setCurrentService] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [stats, setStats] = useState({ toolsCalled: 0, tokensUsed: 0, duration: 0 });
+  const [config, setConfig] = useState({
+    name: "",
+    directory: "",
+    commands: [{ label: "dev", command: "npm run dev" }]
+  });
+  const stopRef = useRef(false);
+  const timerRef = useRef(null);
 
+  const { data: services = [] } = useQuery({
+    queryKey: ["services", config.name],
+    queryFn: () => config.name
+      ? base44.entities.Service.filter({ project_name: config.name }, "-created_date", 50)
+      : [],
+    enabled: !!config.name,
+    refetchInterval: isRunning ? 2000 : false
+  });
+
+  const { data: reports = [] } = useQuery({
+    queryKey: ["reports", config.name],
+    queryFn: () => config.name
+      ? base44.entities.Report.filter({ project_name: config.name }, "-created_date", 50)
+      : [],
+    enabled: !!config.name,
+    refetchInterval: isRunning ? 3000 : 10000
+  });
+
+  const { data: traceEvents = [] } = useQuery({
+    queryKey: ["traces", config.name],
+    queryFn: () => config.name
+      ? base44.entities.TraceEvent.filter({ project_name: config.name }, "-created_date", 100)
+      : [],
+    enabled: !!config.name,
+    refetchInterval: isRunning ? 2000 : false
+  });
+
+  // Duration timer
   useEffect(() => {
-    let active = true;
+    if (isRunning) {
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        setStats(prev => ({ ...prev, duration: Math.round((Date.now() - startTime) / 1000) }));
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isRunning]);
 
-    getDashboardData().then((data) => {
-      if (active) setDashboard(data);
-    });
+  // Ping trace every 5s
+  useEffect(() => {
+    if (!isRunning || !config.name) return;
+    const interval = setInterval(() => {
+      base44.entities.TraceEvent.create({
+        project_name: config.name,
+        event_type: "ping",
+        message: "Agent heartbeat — system active"
+      }).then(() => queryClient.invalidateQueries({ queryKey: ["traces"] }));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isRunning, config.name, queryClient]);
 
-    return () => {
-      active = false;
-    };
-  }, []);
+  const handleRun = useCallback(async () => {
+    if (!config.name) return;
+    stopRef.current = false;
+    setIsRunning(true);
+    setStats({ toolsCalled: 0, tokensUsed: 0, duration: 0 });
 
-  if (!dashboard) {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-6 text-slate-200">
-        <div className="rounded-3xl border border-white/10 bg-slate-950/70 px-6 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          Loading dashboard...
-        </div>
-      </main>
-    );
-  }
+    // Phase 1: Scan services
+    const foundServices = await scanProjectServices(config.name, config.directory);
+    queryClient.invalidateQueries({ queryKey: ["services"] });
+    queryClient.invalidateQueries({ queryKey: ["traces"] });
 
-  const kpis = [
-    { label: 'Experiments', value: dashboard.kpis.experimentsRun, accent: 'from-cyan-500 to-blue-600' },
-    { label: 'Services', value: dashboard.kpis.servicesMonitored, accent: 'from-emerald-500 to-teal-600' },
-    { label: 'Issues', value: dashboard.kpis.issuesFound, accent: 'from-rose-500 to-pink-600' },
-    { label: 'Reports', value: dashboard.kpis.reportsGenerated, accent: 'from-amber-400 to-orange-500' },
-  ];
+    if (stopRef.current) { setIsRunning(false); return; }
+
+    // Phase 2: Analyze each service
+    let totalTools = 0;
+    let totalTokens = 0;
+
+    for (const service of foundServices) {
+      if (stopRef.current) break;
+
+      setCurrentService(service.name);
+      const result = await analyzeService(service, config.name);
+      totalTools += result.toolsCalled;
+      totalTokens += result.tokensUsed;
+      setStats(prev => ({ ...prev, toolsCalled: totalTools, tokensUsed: totalTokens }));
+
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      queryClient.invalidateQueries({ queryKey: ["traces"] });
+    }
+
+    // Summary report
+    if (!stopRef.current) {
+      await base44.entities.Report.create({
+        title: `Summary: ${config.name}`,
+        project_name: config.name,
+        report_type: "summary",
+        status: "complete",
+        content: `# Scan Summary\n\n**Project:** ${config.name}\n**Services Found:** ${foundServices.length}\n**Total Tools Called:** ${totalTools}\n**Total Tokens Used:** ${totalTokens}\n\n## Services\n\n${foundServices.map(s => `- **${s.name}** (${s.type}) — ${s.language}`).join('\n')}`,
+        tokens_used: totalTokens,
+        tools_called: totalTools
+      });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+    }
+
+    setCurrentService(null);
+    setIsRunning(false);
+  }, [config, queryClient]);
+
+  const handleStop = () => {
+    stopRef.current = true;
+    setIsRunning(false);
+  };
 
   return (
-    <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <Header dashboard={dashboard} />
-
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {kpis.map((item, index) => (
-            <StatCard key={item.label} label={item.label} value={item.value} accent={item.accent} />
-          ))}
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-          <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Service Risk Analysis</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Services being monitored</h2>
-              </div>
-              <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-                {dashboard.services.length} services
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {dashboard.services.map((service) => (
-                <ServiceCard key={service.name} service={service} />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <ExperimentPanel experiment={dashboard.activeExperiment} />
-          </div>
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-2">
-          <Infrastructure infrastructure={dashboard.infrastructure} />
-          <ActiveEffects effects={dashboard.activeEffects} />
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-2">
-          <Issues issues={dashboard.issues} />
-
-          <ActivityFeed events={dashboard.activityFeed} />
-        </section>
-
-        {/* <section className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Tools Being Used</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Tool usage</h2>
-
-            <div className="mt-5 space-y-3">
-              {dashboard.tools.map((tool) => (
-                <div key={tool.name} className="flex items-center justify-between rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-4">
-                  <p className="font-medium text-cyan-50">{tool.name}</p>
-                  <span className="rounded-full border border-cyan-200/20 bg-slate-950/30 px-3 py-1 text-xs text-cyan-100">
-                    {tool.usageCount} uses
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Generated Reports</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Reports generated by the system</h2>
-
-            <div className="mt-5 space-y-3">
-              {dashboard.reports.map((report) => (
-                <article key={report.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">{report.id}</p>
-                  <h3 className="mt-2 text-sm font-medium text-white">{report.title}</h3>
-                  <p className="mt-2 text-sm text-slate-300">{report.summary}</p>
-                  <p className="mt-3 text-xs text-cyan-100">Recommendation: {report.recommendation}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section> */}
+    <div className="h-screen flex bg-background overflow-hidden">
+      {/* Left: Report Viewer */}
+      <div className="w-64 border-r border-border/50 bg-card/50 flex flex-col flex-shrink-0">
+        {selectedReport ? (
+          <ReportViewer report={selectedReport} onBack={() => setSelectedReport(null)} />
+        ) : (
+          <ReportList
+            reports={reports}
+            selectedId={selectedReport?.id}
+            onSelect={setSelectedReport}
+          />
+        )}
       </div>
-    </main>
+
+      {/* Center: Workspace */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <div className="p-6 space-y-6 max-w-2xl mx-auto w-full">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Scan className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight">Service Scanner</h1>
+              <p className="text-xs text-muted-foreground">Discover & analyze your architecture</p>
+            </div>
+          </div>
+
+          {/* Run Controls */}
+          <RunControls isRunning={isRunning} onRun={handleRun} onStop={handleStop} />
+
+          {/* Orb Visual */}
+          <OrbVisual isRunning={isRunning} servicesCount={services.length} />
+
+          <Separator className="bg-border/30" />
+
+          {/* Inputs */}
+          <ProjectInputs config={config} onChange={setConfig} />
+
+          <Separator className="bg-border/30" />
+
+          {/* Stats */}
+          <StatsBar
+            toolsCalled={stats.toolsCalled}
+            tokensUsed={stats.tokensUsed}
+            duration={stats.duration}
+          />
+
+          <Separator className="bg-border/30" />
+
+          {/* Services */}
+          <ServicesList services={services} currentService={currentService} />
+        </div>
+      </div>
+
+      {/* Right: Memory Manager */}
+      <div className="w-72 border-l border-border/50 bg-card/50 flex-shrink-0 flex flex-col overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
+          <Brain className="w-4 h-4 text-accent" />
+          <h2 className="text-sm font-semibold tracking-wide">Memory</h2>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <TraceLog events={traceEvents} />
+          <Separator className="bg-border/30" />
+          <AnalysisReports reports={reports} onSelect={setSelectedReport} />
+        </div>
+      </div>
+    </div>
   );
 }
