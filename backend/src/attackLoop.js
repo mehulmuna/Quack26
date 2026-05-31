@@ -12,6 +12,7 @@ const {
 const ATTACK_CHAOS_TOOL_NAMES = [
   "toxiproxy_add_latency",
   "toxiproxy_add_reset_peer",
+  "docker_set_cpu_limit",
   "docker_stop_instance",
 ];
 
