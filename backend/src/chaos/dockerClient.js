@@ -7,10 +7,25 @@ let dockerInstance = null;
 
 function getDocker() {
   if (!dockerInstance) {
-    dockerInstance = new Docker(
-      process.env.DOCKER_HOST ? { socketPath: process.env.DOCKER_HOST } : undefined
-    );
+    const host = process.env.DOCKER_HOST;
+
+    if (!host) {
+      dockerInstance = new Docker();
+    } else if (host.startsWith("npipe://")) {
+      dockerInstance = new Docker({
+        socketPath: host.replace("npipe://", ""),
+      });
+    } else if (host.startsWith("unix://")) {
+      dockerInstance = new Docker({
+        socketPath: host.replace("unix://", ""),
+      });
+    } else {
+      dockerInstance = new Docker({
+        host,
+      });
+    }
   }
+
   return dockerInstance;
 }
 
@@ -70,18 +85,17 @@ function runDockerCli(args, options = {}) {
 }
 
 async function pingDocker() {
-  const docker = getDocker();
   try {
-    await docker.ping();
+    await getDocker().ping();
     return true;
   } catch (err) {
     const hint =
       process.platform === "win32"
-        ? "Start Docker Desktop and wait until it is running."
+        ? "Start Docker Desktop and wait until it says Docker Engine is running."
         : "Ensure the Docker daemon is running.";
+
     throw new Error(
-      `Docker is not available (${err.message}). ${hint} ` +
-        `CLI path tried: ${resolveDockerBin()}`
+      `Docker is not available: ${err.message}\n${hint}\nDocker CLI path: ${resolveDockerBin()}`
     );
   }
 }

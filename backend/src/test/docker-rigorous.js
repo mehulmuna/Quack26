@@ -1,8 +1,17 @@
 const assert = require("assert");
 const { execFile } = require("child_process");
 const { startToxiproxy } = require("../toxiproxy/start");
+const { pingDocker } = require("../chaos/dockerClient");
 
-const tools = require("../tools/registerTools")();
+const INPUTS = {
+    name: "liftlog",
+    dir: "C:/Users/adria/source/repos/osu/swe/goofygoobers",
+    run: {
+        "backend": "npm start",
+        "frontend": "npm start"
+    }
+};
+const tools = require("../tools/registerTools")(INPUTS);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -70,6 +79,8 @@ async function cleanup() {
 }
 
 async function main() {
+  console.log("Checking Docker...");
+await pingDocker();
   console.log("Cleaning old containers...");
   await cleanup();
 
