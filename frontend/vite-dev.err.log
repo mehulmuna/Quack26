@@ -1,9 +1,13 @@
-Error: The following dependencies are imported but could not be resolved:
-
-  [36m@/App.jsx[39m [37m[2m(imported by C:/Users/adria/source/repos/Quack26/frontend/src/main.jsx)[22m[39m
-  [36m@/index.css[39m [37m[2m(imported by C:/Users/adria/source/repos/Quack26/frontend/src/main.jsx)[22m[39m
-
-Are they installed?
-    at file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:14849:15
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:47039:28
+[31mfailed to load config from C:\Users\adria\source\repos\Quack26\frontend\vite.config.js[39m
+[31merror when starting dev server:
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at Object.spawn (node:child_process:786:9)
+    at ensureServiceIsRunning (C:\Users\adria\source\repos\Quack26\frontend\node_modules\esbuild\lib\main.js:1978:29)
+    at build (C:\Users\adria\source\repos\Quack26\frontend\node_modules\esbuild\lib\main.js:1876:26)
+    at bundleConfigFile (file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:49343:24)
+    at async bundleAndLoadConfigFile (file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:49327:19)
+    at async loadConfigFromFile (file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:49291:44)
+    at async resolveConfig (file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:48786:24)
+    at async _createServer (file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:38373:66)
+    at async CAC.<anonymous> (file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/cli.js:753:20)[39m

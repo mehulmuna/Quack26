@@ -1,0 +1,6 @@
+
+> backend@1.0.0 start
+> node src/index.js
+
+◇ injected env (8) from .env // tip: ⌘ override existing { override: true }
+Express API listening on http://localhost:3000

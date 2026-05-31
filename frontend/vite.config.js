@@ -11,13 +11,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/dashboard': 'http://localhost:3000',
-      '/health': 'http://localhost:3000',
-      '/reports': 'http://localhost:3000',
-      '/analysis': 'http://localhost:3000',
-      '/start': 'http://localhost:3000',
-      '/stop': 'http://localhost:3000',
-      '/analyze': 'http://localhost:3000',
+      '/dashboard': 'http://localhost:3002',
+      '/health': 'http://localhost:3002',
+      '/isRunning': 'http://localhost:3002',
+      '/reports': 'http://localhost:3002',
+      '/analysis': 'http://localhost:3002',
+      '/start': 'http://localhost:3002',
+      '/stop': 'http://localhost:3002',
+      '/analyze': 'http://localhost:3002',
     },
   },
 });

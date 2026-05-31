@@ -4,6 +4,7 @@ const path = require("node:path");
 
 const DATA_DIR = path.resolve(__dirname, "../data");
 const REPORTS_DIR = path.join(DATA_DIR, "reports");
+const TRACE_FILE = path.join(DATA_DIR, "trace.txt");
 const REPORT_EXTENSIONS = new Set([".md", ".txt"]);
 
 function isReportFile(fileName) {
@@ -100,6 +101,69 @@ async function readAnalysis() {
     throw err;
 }
 
+function reportType(fileName) {
+    const name = fileName.toLowerCase();
+    return name.includes("summary") ? "summary" : "analysis";
+}
+
+function asDashboardReport(report, content) {
+    return {
+        ...report,
+        report_type: reportType(report.fileName || report.id || report.title),
+        status: "complete",
+        created_date: report.updatedAt,
+        content,
+    };
+}
+
+async function listTraceEvents() {
+    try {
+        const content = await fs.readFile(TRACE_FILE, "utf-8");
+
+        return content
+            .split(/\r?\n/)
+            .filter(Boolean)
+            .map((line, index) => {
+                const match = line.match(/^\[(.+?)\]\s*(.*)$/);
+                const message = match?.[2] || line;
+                return {
+                    id: `trace-${index}`,
+                    event_type: /tool call/i.test(message) ? "tool_call" : "ping",
+                    message,
+                    created_date: match?.[1],
+                };
+            })
+            .reverse();
+    } catch (err) {
+        if (err.code === "ENOENT") return [];
+        throw err;
+    }
+}
+
+async function getDashboardData(mainLoop) {
+    const reports = (await listReports()).map((report) => asDashboardReport(report));
+
+    try {
+        const analysis = await readAnalysis();
+        reports.unshift(asDashboardReport({
+            id: analysis.fileName,
+            fileName: analysis.fileName,
+            title: path.basename(analysis.fileName, analysis.extension),
+            extension: analysis.extension,
+            size: analysis.size,
+            updatedAt: analysis.updatedAt,
+        }, analysis.content));
+    } catch (err) {
+        if (err.status !== 404) throw err;
+    }
+
+    return {
+        status: mainLoop.status(),
+        reports,
+        traceEvents: await listTraceEvents(),
+    };
+}
+
 function createRouter({ dashboardData, mainLoop }) {
     const router = express.Router();
 
@@ -107,8 +171,16 @@ function createRouter({ dashboardData, mainLoop }) {
         res.json({ ok: true });
     });
 
-    router.get("/dashboard", (_req, res) => {
-        res.json(dashboardData);
+    router.get("/isRunning", (_req, res) => {
+        res.json({ running: Boolean(mainLoop.status().running) });
+    });
+
+    router.get("/dashboard", async (_req, res, next) => {
+        try {
+            res.json(dashboardData || await getDashboardData(mainLoop));
+        } catch (err) {
+            next(err);
+        }
     });
 
     router.get("/reports", async (_req, res, next) => {
@@ -140,8 +212,8 @@ function createRouter({ dashboardData, mainLoop }) {
         }
     });
 
-    const startHandler = async (_req, res) => {
-        res.json(await mainLoop.start());
+    const startHandler = async (req, res) => {
+        res.json(await mainLoop.start(req.body || {}));
     };
 
     const stopHandler = (_req, res) => {
