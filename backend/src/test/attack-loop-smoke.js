@@ -5,6 +5,7 @@
  *   node src/test/attack-loop-smoke.js
  *   node src/test/attack-loop-smoke.js --tools-only
  */
+const assert = require("node:assert");
 const path = require("node:path");
 
 require("dotenv").config({
@@ -19,6 +20,7 @@ const {
   ATTACK_CHAOS_TOOL_NAMES,
 } = require("../attackLoop");
 const { ensureChaosRuntime } = require("../chaos/ensureRuntime");
+const { normalizeCpuLimit } = require("../tools/toolModules/dockerTools");
 
 async function testMemoryRead() {
   console.log("\n--- 1) Richard memory_read (Phase 4) ---");
@@ -47,6 +49,9 @@ async function testAttackTools() {
       throw new Error(`Missing tool declaration: ${expected}`);
     }
   }
+  assert.strictEqual(normalizeCpuLimit(0.1), "0.1");
+  assert.strictEqual(normalizeCpuLimit(0), "0");
+  assert.throws(() => normalizeCpuLimit(-0.1), /greater than or equal to 0/);
   console.log("registered:", names.join(", "));
   console.log("Attack chaos tools: passed");
 }
