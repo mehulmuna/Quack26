@@ -137,7 +137,7 @@ export default function Dashboard() {
                       <Scan className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <h1 className="text-lg font-bold tracking-tight">Service Scanner</h1>
+                      <h1 className="text-lg font-bold tracking-tight">PsychoPunch</h1>
                       <p className="text-xs text-muted-foreground">Discover & analyze your architecture</p>
                     </div>
                   </div>
