@@ -1,32 +1,48 @@
 const GeminiClient = require("./gemini/geminiClient");
+const path = require("node:path");
 const { runLoop } = require("./loop");
 const redAgentPrompt = require("./prompts/system/redAgent");
+const { createRouter } = require("./routes");
 const createTools = require("./tools/registerTools");
 const { startToxiproxy } = require("./toxiproxy/start");
 
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, "../.env") });
 
 const express = require('express');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3002;
 
 app.use(express.json());
+
+function parseJsonEnv(name) {
+    const value = process.env[name];
+
+    if (!value) return undefined;
+
+    try {
+        return JSON.parse(value);
+    } catch (err) {
+        console.warn(`Ignoring invalid ${name}: ${err.message}`);
+        return undefined;
+    }
+}
 
 const INPUTS = {
     name: process.env.REPO_NAME,
     dir: process.env.REPO_ABSOLUTE_PATH,
-    run: JSON.parse(process.env.REPO_RUN)
+    run: parseJsonEnv("REPO_RUN")
 };
 
-async function runMainLoop(input){
+async function runMainLoop(input, opts = {}){
 
     await startToxiproxy();
 
-    runLoop(new GeminiClient(), createTools(input), {
+    return runLoop(new GeminiClient(), createTools(input), {
         prompt: redAgentPrompt(input),
         maxTurns: 10,
         maxToolTurns: 10,
+        signal: opts.signal,
         out: (result) => {
             console.log("\n=== TURN RESULT ===");
             console.log(result.text);
@@ -35,128 +51,100 @@ async function runMainLoop(input){
     .then((result) => {
         console.log("\n=== FINAL ===");
         console.log(result.text);
+        return result;
     })
-    .catch(console.error);
 }
 
-runMainLoop(INPUTS);
+function createMainLoopController() {
+    const state = {
+        promise: null,
+        controller: null,
+        startedAt: null,
+        stoppedAt: null,
+        lastResult: null,
+        lastError: null,
+    };
 
+    function status() {
+        return {
+            running: Boolean(state.promise),
+            startedAt: state.startedAt,
+            stoppedAt: state.stoppedAt,
+            lastResult: state.lastResult
+                ? {
+                    done: state.lastResult.done,
+                    aborted: state.lastResult.aborted,
+                    error: state.lastResult.error,
+                }
+                : null,
+            lastError: state.lastError,
+        };
+    }
 
-const dashboardData = {
-	kpis: {
-		experimentsRun: 42,
-		servicesMonitored: 8,
-		issuesFound: 6,
-		reportsGenerated: 12,
-	},
-	services: [
-		{
-			name: 'Auth Service',
-			status: 'Healthy',
-			risk: 89,
-			dependencies: 4,
-		},
-		{
-			name: 'Payment Service',
-			status: 'Healthy',
-			risk: 76,
-			dependencies: 3,
-		},
-		{
-			name: 'Database',
-			status: 'Healthy',
-			risk: 63,
-			dependencies: 2,
-		},
-		{
-			name: 'API Gateway',
-			status: 'Healthy',
-			risk: 38,
-			dependencies: 3,
-		},
-		{
-			name: 'Frontend',
-			status: 'Healthy',
-			risk: 22,
-			dependencies: 1,
-		},
-	],
-	activeExperiment: {
-		target: 'Auth Service',
-		attack: '50% Packet Loss',
-		status: 'Running',
-		duration: '2m 13s',
-		expectedImpact: 'Login failures',
-		progress: 80,
-		message: 'Injecting packet loss...',
-	},
-	infrastructure: {
-		containers: [
-			{ name: 'frontend', status: 'Running' },
-			{ name: 'api-gateway', status: 'Running' },
-			{ name: 'auth-service', status: 'Degraded' },
-			{ name: 'database', status: 'Running' },
-		],
-		summary: {
-			total: 4,
-			healthy: 3,
-			degraded: 1,
-			offline: 0,
-		},
-	},
-	activeEffects: ['50% Packet Loss on Auth Service', '2000ms Latency on Payment Service'],
-	issues: [
-		{ severity: 'HIGH', title: 'Auth Service lacks retry logic' },
-		{ severity: 'HIGH', title: 'Database is single point of failure' },
-		{ severity: 'MEDIUM', title: 'API Gateway timeout too low' },
-		{ severity: 'LOW', title: 'Missing health check endpoint' },
-	],
-	activityFeed: [
-		{ time: '12:01', message: 'Loaded codebase' },
-		{ time: '12:02', message: 'Identified Auth Service' },
-		{ time: '12:03', message: 'Calculated risk score' },
-		{ time: '12:04', message: 'Started packet loss attack' },
-		{ time: '12:05', message: 'Detected login failures' },
-		{ time: '12:06', message: 'Generated root cause report' },
-	],
-	tools: [
-		{ name: 'Memory System', usageCount: 34 },
-		{ name: 'Docker Tool', usageCount: 18 },
-		{ name: 'Packet Loss Tool', usageCount: 7 },
-		{ name: 'Latency Tool', usageCount: 5 },
-		{ name: 'Fetch Tool', usageCount: 19 },
-		{ name: 'Code Analyzer', usageCount: 13 },
-		{ name: 'Gemini', usageCount: 22 },
-	],
-	reports: [
-		{
-			id: 'rca-12',
-			title: 'Root Cause Analysis #12 - Auth Service Failure',
-			summary: 'Root cause: database timeout cascade under packet loss.',
-			recommendation: 'Add retry logic and deploy read replica',
-		},
-		{
-			id: 'chaos-11',
-			title: 'Chaos Test #11 - Packet Loss Experiment',
-			summary: 'Packet loss generated elevated login error rates.',
-			recommendation: 'Tune timeout and backoff strategy',
-		},
-		{
-			id: 'security-7',
-			title: 'Security Finding #7 - Missing Retry Logic',
-			summary: 'Auth dependency failures are not gracefully handled.',
-			recommendation: 'Introduce circuit breaker and retries',
-		},
-	],
-};
+    return {
+        status,
+        async start() {
+            if (state.promise) {
+                return {
+                    ok: true,
+                    started: false,
+                    message: "Main loop is already running.",
+                    ...status(),
+                };
+            }
 
-app.get('/health', (_req, res) => {
-	res.json({ ok: true });
-});
+            state.controller = new AbortController();
+            state.startedAt = new Date().toISOString();
+            state.stoppedAt = null;
+            state.lastError = null;
 
-app.get('/dashboard', (_req, res) => {
-	res.json(dashboardData);
-});
+            state.promise = runMainLoop(INPUTS, { signal: state.controller.signal })
+                .then((result) => {
+                    state.lastResult = result;
+                    return result;
+                })
+                .catch((err) => {
+                    state.lastError = err.message || String(err);
+                    console.error(err);
+                    return { error: state.lastError };
+                })
+                .finally(() => {
+                    state.promise = null;
+                    state.controller = null;
+                    state.stoppedAt = new Date().toISOString();
+                });
+
+            return {
+                ok: true,
+                started: true,
+                ...status(),
+            };
+        },
+        stop() {
+            if (!state.promise) {
+                return {
+                    ok: true,
+                    stopped: false,
+                    message: "Main loop is not running.",
+                    ...status(),
+                };
+            }
+
+            state.controller.abort();
+
+            return {
+                ok: true,
+                stopped: true,
+                message: "Main loop stop requested.",
+                ...status(),
+            };
+        },
+    };
+}
+
+const mainLoop = createMainLoopController();
+
+app.use(createRouter({ mainLoop }));
 
 app.listen(port, () => {
 	console.log(`Express API listening on http://localhost:${port}`);
