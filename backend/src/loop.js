@@ -1,5 +1,6 @@
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const util = require("util");
+const { appendToTrace } = require("./tools/toolModules/memoryTools");
 
 function logChatEvent(type, value) {
   console.log(`\n========== ${type} ==========`);
@@ -226,6 +227,8 @@ async function runTurn(client, tools, opts = {}) {
 
 		for (const call of calls) {
 			const args = call.args || {};
+
+			await appendToTrace(`Tool Call: ${call.name} | Args: ${JSON.stringify(call.args || {})}`);
 
 			logChatEvent("TOOL CALL", {
 				name: call.name,
