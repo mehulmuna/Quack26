@@ -41,7 +41,8 @@ function registerDockerTools(tools) {
 
   tools.register({
     name: "docker_run_instance",
-    description: "Run an app container attached to the chaos Docker network.",
+    description: `Run an app container attached to the chaos Docker network.
+    Current project run info: ${JSON.stringify(tools.data.run)}`,
     parameters: {
       type: "object",
       properties: {

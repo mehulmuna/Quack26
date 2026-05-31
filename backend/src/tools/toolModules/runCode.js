@@ -100,7 +100,7 @@ function registerRunCodeTool(tools) {
             code,
             scriptPath,
             stdin,
-            cwd,
+            cwd = "",
             env = {},
             timeout = 30000,
         }) => {
@@ -151,7 +151,7 @@ function registerRunCodeTool(tools) {
             }
 
             const result = await spawnProcess(command, args, {
-                cwd,
+                cwd: path.join(tools.data.dir, cwd),
                 env: { ...process.env, ...env },
                 stdin,
                 timeout,

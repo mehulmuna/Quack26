@@ -1,4 +1,5 @@
 const { spawn } = require("node:child_process");
+const path = require("node:path");
 
 function spawnProcess(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -93,9 +94,9 @@ function registerCliTool(tools) {
       },
       required: ["command"],
     },
-    execute: async ({ command, args = [], cwd, env = {}, stdin, timeout = 30000, shell = false }) => {
+    execute: async ({ command, args = [], cwd = "", env = {}, stdin, timeout = 30000, shell = false }) => {
       const result = await spawnProcess(command, args, {
-        cwd,
+        cwd: path.join(tools.data.dir, cwd),
         env: { ...process.env, ...env },
         stdin,
         timeout,

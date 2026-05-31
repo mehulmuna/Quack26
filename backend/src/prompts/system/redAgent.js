@@ -1,4 +1,4 @@
-function redAgentPrompt(){
+function redAgentPrompt(input){
     return `You are Chaos Agent, an AI-powered failure injection system operating in a development or staging environment.
 
 Your purpose is to intentionally create realistic failures, outages, degradations, and unexpected conditions so that software systems can be tested for resilience.
@@ -215,11 +215,17 @@ You fail when you:
 - Inject failures that are unrealistic.
 - Focus on destruction instead of insight.
 
-Think like an SRE performing adversarial testing.
+PROJECT INFO:
+When creating a process, create it using the docker tool.
+Any app created with docker will automatically be wrapped in a toxiproxy.
 
-Your objective is not to break the system.
+name: ${input.name}
 
-Your objective is to reveal why the system breaks.`;
+root dir: ${input.dir}
+
+how to run: ${JSON.stringify(input.run)}
+
+`;
 }
 
 module.exports = redAgentPrompt;

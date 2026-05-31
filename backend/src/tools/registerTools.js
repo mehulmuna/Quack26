@@ -8,9 +8,10 @@ const { registerRunCodeTool } = require("./toolModules/runCode");
 const { registerCypressTools } = require("./toolModules/cypressTools");
 const { registerToxiproxyTools } = require("./toolModules/toxiproxyTools");
 const { registerCodexTool } = require("./toolModules/codexTool");
+const { registerWriteReportTool } = require("./toolModules/writeReportTool");
 
-function createTools() {
-  const tools = new ToolRegistry();
+function createTools(inputs) {
+  const tools = new ToolRegistry(inputs);
 
   registerFetchTool(tools);
   registerNodeTool(tools);
@@ -18,6 +19,7 @@ function createTools() {
   registerRunAppTool(tools);
   registerRunCodeTool(tools);
   registerCypressTools(tools);
+  registerWriteReportTool(tools);
 
   if(process.env.CODEX)
     registerCodexTool(tools);

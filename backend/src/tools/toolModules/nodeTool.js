@@ -1,4 +1,5 @@
 const { execFile } = require("node:child_process");
+const path = require("node:path");
 
 function registerNodeTool(tools) {
   tools.register({
@@ -33,7 +34,7 @@ function registerNodeTool(tools) {
           process.execPath,
           [scriptPath, ...args],
           {
-            cwd,
+            cwd: path.join(tools.data.dir, cwd),
             env: { ...process.env, ...env },
             windowsHide: true,
           },

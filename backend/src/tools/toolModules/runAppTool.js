@@ -1,9 +1,11 @@
 const { spawn } = require("node:child_process");
+const path = require("node:path");
 
 function registerRunAppTool(tools) {
   tools.register({
     name: "run_app",
-    description: "Run a command-line application with optional arguments. Use this to interact with the application you are testing with chaos engineering.",
+    description: `Run a command-line application with optional arguments. Use this to interact with the application you are testing with chaos engineering.
+    Current project run info: ${JSON.stringify(tools.data.run)}`,
     parameters: {
       type: "object",
       properties: {
@@ -30,7 +32,7 @@ function registerRunAppTool(tools) {
     execute: async ({ command, args = [], cwd, env = {} }) => {
       return new Promise((resolve, reject) => {
         const child = spawn(command, args, {
-          cwd,
+          cwd: path.join(tools.data.dir, cwd),
           env: { ...process.env, ...env },
           windowsHide: true,
           shell: false,

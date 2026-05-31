@@ -1,4 +1,24 @@
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const util = require("util");
+
+function logChatEvent(type, value) {
+  console.log(`\n========== ${type} ==========`);
+
+  if (typeof value === "string") {
+    console.log(value);
+  } else {
+    console.log(
+      util.inspect(value, {
+        depth: null,
+        colors: true,
+        maxArrayLength: null,
+        maxStringLength: null,
+      })
+    );
+  }
+
+  console.log("================================\n");
+}
 
 function getText(resp) {
 	return (
@@ -68,6 +88,7 @@ function createGenerateOptions(opts, toolAdapter) {
 		intervalMs,
 		stopOnError,
 		stopWhenDone,
+		out,
 		system,
 		systemPrompt,
 		...generateOptions
@@ -75,6 +96,7 @@ function createGenerateOptions(opts, toolAdapter) {
 
 	return {
 		...generateOptions,
+		system: systemPrompt ?? system,
 		tools: toolAdapter,
 	};
 }
@@ -84,33 +106,36 @@ async function runLoop(client, tools, opts = {}) {
 		throw new Error("runLoop requires a client with generateContent(messages, opts)");
 	}
 
-	const maxTurns = opts.maxTurns ?? 10;
-	const intervalMs = opts.intervalMs ?? 10000;
-
+	const maxTurns = opts.maxTurns ?? 20;
+	const intervalMs = opts.intervalMs ?? 0;
 	const messages = normalizeMessages(opts.messages || []);
-	const systemPrompt = opts.systemPrompt ?? opts.system;
-
-	if (systemPrompt) {
-		messages.unshift({
-			role: "user",
-			parts: [{ text: `SYSTEM:\n${String(systemPrompt)}` }],
-		});
-	}
 
 	if (opts.prompt) {
-		messages.push({
+		const promptMessage = {
 			role: "user",
 			parts: [{ text: String(opts.prompt) }],
-		});
+		};
+
+		messages.push(promptMessage);
+		logChatEvent("CHAT ADDED (user prompt)", promptMessage);
 	}
 
 	if (messages.length === 0) {
-		throw new Error("runLoop requires opts.prompt, opts.systemPrompt, or opts.messages");
+		throw new Error("runLoop requires opts.prompt or opts.messages");
+	}
+
+	for (const message of messages) {
+		logChatEvent(`CHAT HAS (${message.role})`, message);
 	}
 
 	const turns = [];
 
 	for (let i = 0; i < maxTurns; i++) {
+		logChatEvent("LOOP TURN START", {
+			turn: i + 1,
+			maxTurns,
+		});
+
 		const result = await runTurn(client, tools, {
 			...opts,
 			prompt: undefined,
@@ -119,7 +144,11 @@ async function runLoop(client, tools, opts = {}) {
 
 		turns.push(result);
 
-		if (result.error && opts.stopOnError !== false) break;
+		if (typeof opts.out === "function") {
+			opts.out(result);
+		}
+		console.log(result);
+		// if (result.error && opts.stopOnError !== false) break;
 		if (opts.stopWhenDone !== false && result.done) break;
 
 		if (i < maxTurns - 1 && intervalMs > 0) {
@@ -144,29 +173,38 @@ async function runTurn(client, tools, opts = {}) {
 	}
 
 	const toolAdapter = createToolAdapter(tools);
-	const maxToolTurns = opts.maxToolTurns ?? 5;
+	const maxToolTurns = opts.maxToolTurns ?? 10;
 	const generateOptions = createGenerateOptions(opts, toolAdapter);
 
 	const toolResults = [];
 	let raw = null;
 
-	for (let turn = 0; turn < maxToolTurns; turn++) {
+	for (let toolTurn = 0; toolTurn < maxToolTurns; toolTurn++) {
 		raw = await client.generateContent(messages, generateOptions);
 
 		const modelContent = raw?.candidates?.[0]?.content;
+
 		if (!modelContent) {
 			return {
 				text: "",
 				messages,
 				raw,
 				toolResults,
-				turns: turn + 1,
+				turns: toolTurn + 1,
 				done: false,
 				error: "No model content returned",
 			};
 		}
 
 		messages.push(modelContent);
+		// logChatEvent("MODEL WROTE", modelContent);
+
+		const text =
+			typeof client.getText === "function" ? client.getText(raw) : getText(raw);
+
+		if (text) {
+			logChatEvent("MODEL TEXT", text);
+		}
 
 		const calls =
 			typeof client.getFunctionCalls === "function"
@@ -174,15 +212,12 @@ async function runTurn(client, tools, opts = {}) {
 				: getFunctionCalls(raw);
 
 		if (!calls.length) {
-			const text =
-				typeof client.getText === "function" ? client.getText(raw) : getText(raw);
-
 			return {
 				text,
 				messages,
 				raw,
 				toolResults,
-				turns: turn + 1,
+				turns: toolTurn + 1,
 				done: true,
 			};
 		}
@@ -190,19 +225,31 @@ async function runTurn(client, tools, opts = {}) {
 		const responseParts = [];
 
 		for (const call of calls) {
+			const args = call.args || {};
+
+			logChatEvent("TOOL CALL", {
+				name: call.name,
+				args,
+			});
+
 			let result;
 
 			try {
-				result = await toolAdapter.execute(call.name, call.args || {});
+				result = await toolAdapter.execute(call.name, args);
 			} catch (err) {
 				result = {
-					error: err.message || String(err),
+					error: err?.message || String(err),
 				};
 			}
 
 			toolResults.push({
 				name: call.name,
-				args: call.args || {},
+				args,
+				result,
+			});
+
+			logChatEvent("TOOL RESULT", {
+				name: call.name,
 				result,
 			});
 
@@ -216,10 +263,13 @@ async function runTurn(client, tools, opts = {}) {
 			});
 		}
 
-		messages.push({
+		const toolResponseMessage = {
 			role: "user",
 			parts: responseParts,
-		});
+		};
+
+		messages.push(toolResponseMessage);
+		// logChatEvent("CHAT ADDED (tool responses)", toolResponseMessage);
 	}
 
 	return {
@@ -239,4 +289,5 @@ module.exports = {
 	getText,
 	getFunctionCalls,
 	normalizeMessages,
+	createToolAdapter,
 };

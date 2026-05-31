@@ -1,5 +1,6 @@
 class ToolRegistry {
-  constructor() {
+  constructor(inputs) {
+    this.data = inputs;
     this.tools = new Map();
   }
 

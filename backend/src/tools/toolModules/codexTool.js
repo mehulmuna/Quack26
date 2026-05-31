@@ -91,10 +91,10 @@ function registerCodexTool(tools) {
       },
       required: ["prompt"],
     },
-    execute: async ({ prompt, cwd, timeout = 300000, env = {} }) => {
+    execute: async ({ prompt, cwd = "", timeout = 300000, env = {} }) => {
       return await runCodexExec({
         prompt,
-        cwd,
+        cwd: path.join(tools.data.dir, cwd),
         timeout,
         env,
       });

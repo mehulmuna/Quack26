@@ -30,47 +30,47 @@ async function tox(path, options = {}) {
 }
 
 function registerToxiproxyTools(tools) {
-    tools.register({
-        name: "toxiproxy_create_proxy",
-        description: "Create a Toxiproxy proxy from a local listen port to an upstream host and port.",
-        parameters: {
-            type: "object",
-            properties: {
-                name: { type: "string" },
-                listenPort: { type: "number" },
-                upstreamHost: { type: "string" },
-                upstreamPort: { type: "number" },
-            },
-            required: ["name", "listenPort", "upstreamHost", "upstreamPort"],
-        },
-        execute: async ({ name, listenPort, upstreamHost, upstreamPort }) => {
-            return await tox("/proxies", {
-                method: "POST",
-                body: JSON.stringify({
-                    name,
-                    listen: `0.0.0.0:${listenPort}`,
-                    upstream: `${upstreamHost}:${upstreamPort}`,
-                }),
-            });
-        },
-    });
+    // tools.register({
+    //     name: "toxiproxy_create_proxy",
+    //     description: "Create a Toxiproxy proxy from a local listen port to an upstream host and port.",
+    //     parameters: {
+    //         type: "object",
+    //         properties: {
+    //             name: { type: "string" },
+    //             listenPort: { type: "number" },
+    //             upstreamHost: { type: "string" },
+    //             upstreamPort: { type: "number" },
+    //         },
+    //         required: ["name", "listenPort", "upstreamHost", "upstreamPort"],
+    //     },
+    //     execute: async ({ name, listenPort, upstreamHost, upstreamPort }) => {
+    //         return await tox("/proxies", {
+    //             method: "POST",
+    //             body: JSON.stringify({
+    //                 name,
+    //                 listen: `0.0.0.0:${listenPort}`,
+    //                 upstream: `${upstreamHost}:${upstreamPort}`,
+    //             }),
+    //         });
+    //     },
+    // });
 
-    tools.register({
-        name: "toxiproxy_delete_proxy",
-        description: "Delete a Toxiproxy proxy.",
-        parameters: {
-            type: "object",
-            properties: {
-                name: { type: "string" },
-            },
-            required: ["name"],
-        },
-        execute: async ({ name }) => {
-            return await tox(`/proxies/${name}`, {
-                method: "DELETE",
-            });
-        },
-    });
+    // tools.register({
+    //     name: "toxiproxy_delete_proxy",
+    //     description: "Delete a Toxiproxy proxy.",
+    //     parameters: {
+    //         type: "object",
+    //         properties: {
+    //             name: { type: "string" },
+    //         },
+    //         required: ["name"],
+    //     },
+    //     execute: async ({ name }) => {
+    //         return await tox(`/proxies/${name}`, {
+    //             method: "DELETE",
+    //         });
+    //     },
+    // });
 
     tools.register({
         name: "toxiproxy_enable_proxy",
