@@ -8,6 +8,11 @@ export default defineConfig({
     proxy: {
       '/dashboard': 'http://localhost:3000',
       '/health': 'http://localhost:3000',
+      '/reports': 'http://localhost:3000',
+      '/analysis': 'http://localhost:3000',
+      '/start': 'http://localhost:3000',
+      '/stop': 'http://localhost:3000',
+      '/analyze': 'http://localhost:3000',
     },
   },
 });

@@ -102,6 +102,21 @@ function createGenerateOptions(opts, toolAdapter) {
 	};
 }
 
+function isAbortError(err) {
+	return err?.name === "AbortError" || err?.code === "ABORT_ERR";
+}
+
+function abortedResult(messages, turns, error = "aborted") {
+	return {
+		messages,
+		turns,
+		text: turns.at(-1)?.text || "",
+		error,
+		done: false,
+		aborted: true,
+	};
+}
+
 async function runLoop(client, tools, opts = {}) {
 	if (!client || typeof client.generateContent !== "function") {
 		throw new Error("runLoop requires a client with generateContent(messages, opts)");
@@ -132,16 +147,30 @@ async function runLoop(client, tools, opts = {}) {
 	const turns = [];
 
 	for (let i = 0; i < maxTurns; i++) {
+		if (opts.signal?.aborted) {
+			return abortedResult(messages, turns);
+		}
+
 		logChatEvent("LOOP TURN START", {
 			turn: i + 1,
 			maxTurns,
 		});
 
-		const result = await runTurn(client, tools, {
-			...opts,
-			prompt: undefined,
-			messages,
-		});
+		let result;
+
+		try {
+			result = await runTurn(client, tools, {
+				...opts,
+				prompt: undefined,
+				messages,
+			});
+		} catch (err) {
+			if (isAbortError(err) || opts.signal?.aborted) {
+				return abortedResult(messages, turns);
+			}
+
+			throw err;
+		}
 
 		turns.push(result);
 
@@ -181,6 +210,19 @@ async function runTurn(client, tools, opts = {}) {
 	let raw = null;
 
 	for (let toolTurn = 0; toolTurn < maxToolTurns; toolTurn++) {
+		if (opts.signal?.aborted) {
+			return {
+				text: "",
+				messages,
+				raw,
+				toolResults,
+				turns: toolTurn,
+				done: false,
+				aborted: true,
+				error: "aborted",
+			};
+		}
+
 		raw = await client.generateContent(messages, generateOptions);
 
 		const modelContent = raw?.candidates?.[0]?.content;
@@ -226,6 +268,19 @@ async function runTurn(client, tools, opts = {}) {
 		const responseParts = [];
 
 		for (const call of calls) {
+			if (opts.signal?.aborted) {
+				return {
+					text,
+					messages,
+					raw,
+					toolResults,
+					turns: toolTurn + 1,
+					done: false,
+					aborted: true,
+					error: "aborted",
+				};
+			}
+
 			const args = call.args || {};
 
 			await appendToTrace(`Tool Call: ${call.name} | Args: ${JSON.stringify(call.args || {})}`);

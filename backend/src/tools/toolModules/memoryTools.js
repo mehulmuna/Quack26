@@ -32,6 +32,8 @@ async function readMemory() {
  * Helper to save the memory state.
  */
 async function writeMemory(data) {
+  const dir = path.dirname(MEMORY_FILE);
+  await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(MEMORY_FILE, JSON.stringify(data, null, 2), "utf-8");
 }
 

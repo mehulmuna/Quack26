@@ -72,6 +72,7 @@ class GeminiClient {
     const res = await this.fetch(this.endpoint(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: opts.signal,
       body: JSON.stringify(body),
     });
 
