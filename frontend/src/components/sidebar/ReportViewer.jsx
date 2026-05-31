@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
-import { Clock, Wrench, Coins } from "lucide-react";
+import { Clock, Wrench, Coins, WandSparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const markdownComponents = {
   h1: ({ ...props }) => (
@@ -69,29 +70,42 @@ const markdownComponents = {
   ),
 };
 
-export default function ReportViewer({ report }) {
+export default function ReportViewer({ report, onSuggestedFix }) {
   if (!report) return null;
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="border-b border-border/50 px-6 py-4 pr-12">
-        <h2 className="text-lg font-semibold tracking-tight">{report.title}</h2>
-        <div className="mt-2 flex flex-wrap gap-4">
-          {report.tools_called > 0 && (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Wrench className="h-3.5 w-3.5" /> {report.tools_called} tools
-            </span>
-          )}
-          {report.tokens_used > 0 && (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Coins className="h-3.5 w-3.5" /> {report.tokens_used} tokens
-            </span>
-          )}
-          {report.duration_seconds > 0 && (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock className="h-3.5 w-3.5" /> {report.duration_seconds}s
-            </span>
-          )}
+      <div className="border-b border-border/50 px-6 py-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight">{report.title}</h2>
+            <div className="mt-2 flex flex-wrap gap-4">
+              {report.tools_called > 0 && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Wrench className="h-3.5 w-3.5" /> {report.tools_called} tools
+                </span>
+              )}
+              {report.tokens_used > 0 && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Coins className="h-3.5 w-3.5" /> {report.tokens_used} tokens
+                </span>
+              )}
+              {report.duration_seconds > 0 && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" /> {report.duration_seconds}s
+                </span>
+              )}
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            onClick={onSuggestedFix}
+            className="shrink-0 gap-2 rounded-full bg-primary px-8 py-2.5 font-medium tracking-wide text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
+          >
+            <WandSparkles className="h-4 w-4" />
+            Fix
+          </Button>
         </div>
       </div>
 

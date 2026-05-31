@@ -185,7 +185,7 @@ export default function BackendTerminal({ onEvent }) {
   }, []);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0c1224] via-[#0b1020] to-[#070b16] text-slate-200 shadow-[0_20px_70px_rgba(0,0,0,0.35)]">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0c1224] via-[#0b1020] to-[#070b16] text-slate-200 shadow-[0_20px_70px_rgba(0,0,0,0.35)]">
       <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-white/[0.04] px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center">
@@ -208,11 +208,7 @@ export default function BackendTerminal({ onEvent }) {
         </Badge>
       </div>
 
-      <div className="border-b border-white/5 bg-black/20 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-        Type in the shell to send input to the backend. Output stays live even if the server restarts.
-      </div>
-
-      <div className="h-[28rem] w-full overflow-hidden bg-[#060b15]">
+      <div className="min-h-0 flex-1 w-full overflow-hidden bg-[#060b15]">
         <div ref={containerRef} className="h-full w-full" />
       </div>
     </section>
