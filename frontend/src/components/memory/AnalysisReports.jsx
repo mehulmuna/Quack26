@@ -1,4 +1,3 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
@@ -7,7 +6,7 @@ export default function AnalysisReports({ reports = [], onSelect }) {
   const analysisReports = reports.filter(r => r.report_type === "analysis");
 
   return (
-    <div className="space-y-2 h-full">
+    <div className="flex h-full min-h-0 flex-col space-y-2 rounded-xl border border-border/40 bg-card/40 p-3">
       <div className="flex items-center gap-2">
         <FileText className="w-3.5 h-3.5 text-accent" />
         <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
@@ -18,29 +17,29 @@ export default function AnalysisReports({ reports = [], onSelect }) {
         </Badge>
       </div>
 
-      <ScrollArea className="h-full">
-        <div className="space-y-1 pr-2">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="space-y-1">
           {analysisReports.map((report) => (
             <button
               key={report.id}
               onClick={() => onSelect(report)}
-              className="w-full text-left flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted/40 transition-colors"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-muted/40"
             >
               {report.status === "generating" ? (
-                <Loader2 className="w-3 h-3 text-primary animate-spin flex-shrink-0" />
+                <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin text-primary" />
               ) : (
-                <CheckCircle2 className="w-3 h-3 text-chart-3 flex-shrink-0" />
+                <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-chart-3" />
               )}
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium truncate">{report.title}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-medium">{report.title}</p>
                 {report.service_name && (
-                  <p className="text-[9px] text-muted-foreground/60 font-mono">
+                  <p className="font-mono text-[9px] text-muted-foreground/60">
                     {report.service_name}
                   </p>
                 )}
               </div>
               {report.created_date && (
-                <span className="text-[9px] text-muted-foreground/40 font-mono">
+                <span className="font-mono text-[9px] text-muted-foreground/40">
                   {format(new Date(report.created_date), "HH:mm")}
                 </span>
               )}
@@ -48,12 +47,12 @@ export default function AnalysisReports({ reports = [], onSelect }) {
           ))}
 
           {analysisReports.length === 0 && (
-            <p className="text-[11px] text-muted-foreground/40 text-center py-4 italic">
+            <p className="py-4 text-center text-[11px] italic text-muted-foreground/40">
               No analysis reports yet
             </p>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

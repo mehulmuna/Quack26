@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDashboardData, getIsRunning, getReport, startScan, stopScan } from "@/services/api";
 import OrbVisual from "@/components/workspace/OrbVisual";
-import RunControls from "@/components/workspace/RunControls";
 import ProjectInputs from "@/components/workspace/ProjectInputs";
 import StatsBar from "@/components/workspace/StatsBar";
 import TraceLog from "@/components/memory/TraceLog";
@@ -82,6 +81,20 @@ export default function Dashboard() {
     await refreshDashboard();
   }, [refreshDashboard]);
 
+  const handleSuggestedFix = useCallback(async () => {
+    if (!selectedReport) return;
+
+    const reportName = selectedReport.fileName || selectedReport.id || selectedReport.title;
+
+    await fetch("http://localhost:3002/fix", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ report: reportName }),
+    });
+  }, [selectedReport]);
+
   const handleSelectReport = useCallback(async (report) => {
     const requestId = reportRequestRef.current + 1;
     reportRequestRef.current = requestId;
@@ -114,9 +127,9 @@ export default function Dashboard() {
   return (
     <div className="h-screen bg-background overflow-hidden">
       <div className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
-        <main className="min-w-0 overflow-y-auto">
-          <div className="p-6 space-y-6">
-            <div className="rounded-2xl border border-border/50 bg-card/50 p-5 shadow-sm">
+        <main className="min-w-0 min-h-0 overflow-hidden">
+          <div className="flex h-full min-h-0 flex-col gap-4 p-6">
+            <div className="rounded-2xl border border-border/50 bg-card/50 p-5 shadow-sm shrink-0">
               <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
                 <section className="space-y-6">
                   <div className="flex items-center gap-3">
@@ -129,7 +142,6 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <RunControls isRunning={isRunning} onRun={handleRun} onStop={handleStop} />
                   <OrbVisual isRunning={isRunning} servicesCount={services.length} />
                   <div className="h-px bg-border/30" />
                   <StatsBar
@@ -138,28 +150,34 @@ export default function Dashboard() {
                     duration={stats.duration}
                   />
                   <div className="h-px bg-border/30" />
-                  
                 </section>
 
                 <section className="space-y-6 border-t border-border/30 pt-6 xl:border-t-0 xl:border-l xl:border-border/30 xl:pt-0 xl:pl-6">
-                  <ProjectInputs config={config} onChange={setConfig} />
+                  <ProjectInputs
+                    config={config}
+                    onChange={setConfig}
+                    isRunning={isRunning}
+                    onRun={handleRun}
+                    onStop={handleStop}
+                  />
                 </section>
               </div>
             </div>
 
-            <BackendTerminal />
+            <div className="min-h-0 flex-1">
+              <BackendTerminal />
+            </div>
           </div>
         </main>
 
         <aside className="min-w-0 border-t border-border/50 lg:border-t-0 lg:border-l lg:border-border/50 bg-card/50 flex flex-col overflow-hidden">
-          <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
+          <div className="px-3 py-2.5 border-b border-border/50 flex items-center gap-2">
             <Brain className="w-4 h-4 text-accent" />
             <h2 className="text-sm font-semibold tracking-wide">Memory</h2>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div className="grid flex-1 min-h-0 grid-rows-2 gap-3 p-3">
             <TraceLog events={traceEvents} />
-            <div className="h-px bg-border/30" />
             <AnalysisReports reports={reports} onSelect={handleSelectReport} />
           </div>
         </aside>
@@ -167,7 +185,7 @@ export default function Dashboard() {
 
       <Dialog open={!!selectedReport} onOpenChange={handleReportDialogOpenChange}>
         <DialogContent className="h-[85vh] max-h-[900px] min-h-0 w-[calc(100vw-2rem)] max-w-5xl gap-0 overflow-hidden p-0">
-          <ReportViewer report={selectedReport} />
+          <ReportViewer report={selectedReport} onSuggestedFix={handleSuggestedFix} />
         </DialogContent>
       </Dialog>
     </div>

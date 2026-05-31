@@ -2,8 +2,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
+import RunControls from "@/components/workspace/RunControls";
 
-export default function ProjectInputs({ config, onChange }) {
+export default function ProjectInputs({ config, onChange, isRunning, onRun, onStop }) {
   const addCommand = () => {
     onChange({
       ...config,
@@ -89,6 +90,10 @@ export default function ProjectInputs({ config, onChange }) {
             </Button>
           </div>
         ))}
+      </div>
+
+      <div className="pt-2 border-t border-border/30">
+        <RunControls isRunning={isRunning} onRun={onRun} onStop={onStop} />
       </div>
     </div>
   );
