@@ -146,6 +146,23 @@ console.log("APP LOGS:", logs3);
     `docker_exec failed: ${JSON.stringify(execResult)}`
   );
 
+  console.log("Applying Docker CPU limit...");
+  const cpuLimitResult = await tools.execute("docker_set_cpu_limit", {
+    name: "demo-app",
+    cpus: 0.1,
+  });
+
+  assert(cpuLimitResult.ok, "docker_set_cpu_limit failed");
+  assert.strictEqual(cpuLimitResult.cpus, 0.1, "Unexpected CPU limit result");
+
+  console.log("Restoring Docker CPU limit...");
+  const cpuRestoreResult = await tools.execute("docker_restore_cpu_limit", {
+    name: "demo-app",
+  });
+
+  assert(cpuRestoreResult.ok, "docker_restore_cpu_limit failed");
+  assert.strictEqual(cpuRestoreResult.cpus, "unlimited", "Unexpected CPU restore result");
+
   console.log("Creating Toxiproxy proxy...");
   const proxyResult = await tools.execute("toxiproxy_create_proxy", {
     name: "demo_proxy",
@@ -274,6 +291,8 @@ console.log("APP LOGS:", logs3);
   console.log("- Toxiproxy API health");
   console.log("- Docker app container startup");
   console.log("- docker_exec");
+  console.log("- docker_set_cpu_limit");
+  console.log("- docker_restore_cpu_limit");
   console.log("- docker_logs");
   console.log("- proxy creation");
   console.log("- proxy request routing");
