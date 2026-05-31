@@ -14,6 +14,10 @@ export default defineConfig({
       '/dashboard': 'http://localhost:3002',
       '/health': 'http://localhost:3002',
       '/isRunning': 'http://localhost:3002',
+      '/terminal': {
+        target: 'http://localhost:3002',
+        ws: true,
+      },
       '/reports': 'http://localhost:3002',
       '/analysis': 'http://localhost:3002',
       '/start': 'http://localhost:3002',

@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Separator } from "@/components/ui/separator";
 import { getDashboardData, getIsRunning, getReport, startScan, stopScan } from "@/services/api";
 import OrbVisual from "@/components/workspace/OrbVisual";
 import RunControls from "@/components/workspace/RunControls";
 import ProjectInputs from "@/components/workspace/ProjectInputs";
 import StatsBar from "@/components/workspace/StatsBar";
-import ServicesList from "@/components/workspace/ServicesList";
-import ReportList from "@/components/sidebar/ReportList";
-import ReportViewer from "@/components/sidebar/ReportViewer";
 import TraceLog from "@/components/memory/TraceLog";
 import AnalysisReports from "@/components/memory/AnalysisReports";
+import BackendTerminal from "@/components/workspace/BackendTerminal";
+import ReportViewer from "@/components/sidebar/ReportViewer";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Brain, Scan } from "lucide-react";
 
@@ -114,60 +112,57 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
-      <div className="w-72 border-r border-border/50 bg-card/50 flex flex-col flex-shrink-0">
-        <ReportList
-          reports={reports}
-          selectedId={selectedReport?.id}
-          onSelect={handleSelectReport}
-        />
-      </div>
+    <div className="h-screen bg-background overflow-hidden">
+      <div className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
+        <main className="min-w-0 overflow-y-auto">
+          <div className="p-6 space-y-6">
+            <div className="rounded-2xl border border-border/50 bg-card/50 p-5 shadow-sm">
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Scan className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h1 className="text-lg font-bold tracking-tight">Service Scanner</h1>
+                      <p className="text-xs text-muted-foreground">Discover & analyze your architecture</p>
+                    </div>
+                  </div>
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <div className="p-6 space-y-6 max-w-2xl mx-auto w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Scan className="w-4 h-4 text-primary" />
+                  <RunControls isRunning={isRunning} onRun={handleRun} onStop={handleStop} />
+                  <OrbVisual isRunning={isRunning} servicesCount={services.length} />
+                  <div className="h-px bg-border/30" />
+                  <StatsBar
+                    toolsCalled={stats.toolsCalled}
+                    tokensUsed={stats.tokensUsed}
+                    duration={stats.duration}
+                  />
+                  <div className="h-px bg-border/30" />
+                  
+                </section>
+
+                <section className="space-y-6 border-t border-border/30 pt-6 xl:border-t-0 xl:border-l xl:border-border/30 xl:pt-0 xl:pl-6">
+                  <ProjectInputs config={config} onChange={setConfig} />
+                </section>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">Service Scanner</h1>
-              <p className="text-xs text-muted-foreground">Discover & analyze your architecture</p>
-            </div>
+
+            <BackendTerminal />
+          </div>
+        </main>
+
+        <aside className="min-w-0 border-t border-border/50 lg:border-t-0 lg:border-l lg:border-border/50 bg-card/50 flex flex-col overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
+            <Brain className="w-4 h-4 text-accent" />
+            <h2 className="text-sm font-semibold tracking-wide">Memory</h2>
           </div>
 
-          <RunControls isRunning={isRunning} onRun={handleRun} onStop={handleStop} />
-
-          <OrbVisual isRunning={isRunning} servicesCount={services.length} />
-
-          <Separator className="bg-border/30" />
-
-          <ProjectInputs config={config} onChange={setConfig} />
-
-          <Separator className="bg-border/30" />
-
-          <StatsBar
-            toolsCalled={stats.toolsCalled}
-            tokensUsed={stats.tokensUsed}
-            duration={stats.duration}
-          />
-
-          <Separator className="bg-border/30" />
-
-          <ServicesList services={services} currentService={currentService} />
-        </div>
-      </div>
-
-      <div className="w-[30vw] border-l border-border/50 bg-card/50 flex-shrink-0 flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
-          <Brain className="w-4 h-4 text-accent" />
-          <h2 className="text-sm font-semibold tracking-wide">Memory</h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <TraceLog events={traceEvents} />
-          <Separator className="bg-border/30" />
-          <AnalysisReports reports={reports} onSelect={handleSelectReport} />
-        </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <TraceLog events={traceEvents} />
+            <div className="h-px bg-border/30" />
+            <AnalysisReports reports={reports} onSelect={handleSelectReport} />
+          </div>
+        </aside>
       </div>
 
       <Dialog open={!!selectedReport} onOpenChange={handleReportDialogOpenChange}>

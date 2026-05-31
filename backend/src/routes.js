@@ -1,6 +1,7 @@
 const express = require("express");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { runCodexExec } = require("./tools/toolModules/codexTool");
 
 const DATA_DIR = path.resolve(__dirname, "../data");
 const REPORTS_DIR = path.join(DATA_DIR, "reports");
@@ -167,8 +168,34 @@ async function getDashboardData(mainLoop) {
 function createRouter({ dashboardData, mainLoop }) {
     const router = express.Router();
 
+    console.log("starting router");
+
     router.get("/health", (_req, res) => {
         res.json({ ok: true });
+    });
+
+    router.post("/fix", async (_req, res) => {
+        console.log("rec report");
+        try {
+            const report = _req.body.report;
+
+            let prompt = (await readReport(report)).content;
+            
+            console.log("Running blue agent fix");
+            const result = await runCodexExec({prompt});
+            console.log("Finished fix");
+
+            res.json({
+                ok: true,
+                result,
+            });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({
+                ok: false,
+                error: err.message,
+            });
+        }
     });
 
     router.get("/isRunning", (_req, res) => {

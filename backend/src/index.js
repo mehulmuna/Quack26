@@ -1,10 +1,12 @@
 const GeminiClient = require("./gemini/geminiClient");
+const http = require("node:http");
 const path = require("node:path");
 const { runLoop } = require("./loop");
 const redAgentPrompt = require("./prompts/system/redAgent");
 const { createRouter } = require("./routes");
 const createTools = require("./tools/registerTools");
 const { startToxiproxy } = require("./toxiproxy/start");
+const { attachTerminalServer, broadcastTerminalOutput } = require("./terminal");
 
 require('dotenv').config({ path: path.resolve(__dirname, "../.env") });
 
@@ -12,6 +14,24 @@ const express = require('express');
 
 const app = express();
 const port = process.env.PORT || 3002;
+const server = http.createServer(app);
+
+function teeProcessOutput() {
+    const stdoutWrite = process.stdout.write.bind(process.stdout);
+    const stderrWrite = process.stderr.write.bind(process.stderr);
+
+    process.stdout.write = (chunk, encoding, callback) => {
+        const text = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString(typeof encoding === "string" ? encoding : undefined);
+        broadcastTerminalOutput(text);
+        return stdoutWrite(chunk, encoding, callback);
+    };
+
+    process.stderr.write = (chunk, encoding, callback) => {
+        const text = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString(typeof encoding === "string" ? encoding : undefined);
+        broadcastTerminalOutput(text);
+        return stderrWrite(chunk, encoding, callback);
+    };
+}
 
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "*");
@@ -192,6 +212,10 @@ app.use(createRouter({
     },
 }));
 
-app.listen(port, () => {
+
+attachTerminalServer(server);
+teeProcessOutput();
+
+server.listen(port, () => {
 	console.log(`Express API listening on http://localhost:${port}`);
 });
