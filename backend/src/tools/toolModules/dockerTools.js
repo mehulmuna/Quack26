@@ -1,22 +1,4 @@
-const { execFile } = require("child_process");
-
-function run(cmd, args, options = {}) {
-  return new Promise((resolve, reject) => {
-    execFile(cmd, args, options, (error, stdout, stderr) => {
-      if (error) {
-        error.stdout = stdout;
-        error.stderr = stderr;
-        reject(error);
-        return;
-      }
-
-      resolve({
-        stdout,
-        stderr,
-      });
-    });
-  });
-}
+const { runDockerCli } = require("../../chaos/dockerClient");
 
 function registerDockerTools(tools) {
   tools.register({
@@ -29,13 +11,8 @@ function registerDockerTools(tools) {
       },
     },
     execute: async ({ name = "chaosnet" }) => {
-      try {
-        await run("docker", ["network", "inspect", name]);
-        return { ok: true, existed: true, name };
-      } catch {
-        await run("docker", ["network", "create", name]);
-        return { ok: true, created: true, name };
-      }
+      const { ensureNetwork } = require("../../chaos/dockerClient");
+      return await ensureNetwork(name);
     },
   });
 
@@ -57,7 +34,7 @@ function registerDockerTools(tools) {
       required: ["name", "image"],
     },
     execute: async ({ name, image, command = [], network = "chaosnet" }) => {
-      await run("docker", ["rm", "-f", name]).catch(() => null);
+      await runDockerCli(["rm", "-f", name]).catch(() => null);
 
       const args = [
         "run",
@@ -70,7 +47,7 @@ function registerDockerTools(tools) {
         ...command,
       ];
 
-      const result = await run("docker", args);
+      const result = await runDockerCli(args);
 
       return {
         ok: true,
@@ -92,8 +69,8 @@ function registerDockerTools(tools) {
       required: ["name"],
     },
     execute: async ({ name }) => {
-      await run("docker", ["rm", "-f", name]);
-      return { ok: true, name };
+      const { stopAndRemoveContainer } = require("../../chaos/dockerClient");
+      return await stopAndRemoveContainer(name);
     },
   });
 
@@ -109,7 +86,7 @@ function registerDockerTools(tools) {
       required: ["name"],
     },
     execute: async ({ name, tail = 200 }) => {
-      const result = await run("docker", ["logs", "--tail", String(tail), name]);
+      const result = await runDockerCli(["logs", "--tail", String(tail), name]);
 
       return {
         stdout: result.stdout,
@@ -133,7 +110,7 @@ function registerDockerTools(tools) {
       required: ["name", "command"],
     },
     execute: async ({ name, command }) => {
-      const result = await run("docker", ["exec", name, ...command]);
+      const result = await runDockerCli(["exec", name, ...command]);
 
       return {
         stdout: result.stdout,

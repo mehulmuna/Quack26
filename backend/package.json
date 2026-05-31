@@ -5,9 +5,15 @@
   "main": "index.js",
   "scripts": {
     "start:toxiproxy": "docker compose up -d",
-    "test": "node src/test/loop-client.js",
-    "test:loop": "node src/test/loop-client.js",
-    "gemini:demo": "node gemini_demo.js"
+    "start": "node src/index.js",
+    "chaos:ensure": "node -e \"require('dotenv').config(); require('./src/chaos/ensureRuntime').ensureChaosRuntime().then(r=>console.log(JSON.stringify(r,null,2))).catch(e=>{console.error(e.message||e);process.exit(1)})\"",
+    "test": "node src/test/attack-loop-smoke.js --tools-only",
+    "gemini:demo": "node src/gemini/gemini_demo.js",
+    "test:loop": "node src/test/attack-loop-smoke.js",
+    "test:analyzer": "node src/test/codebase-analyzer-smoke.js",
+    "test:analyzer:tools": "node src/test/codebase-analyzer-smoke.js --tools-only",
+    "test:attack": "node src/test/attack-loop-smoke.js",
+    "test:attack:tools": "node src/test/attack-loop-smoke.js --tools-only"
   },
   "author": "",
   "license": "ISC",

@@ -148,5 +148,8 @@ function registerMemoryTools(tools) {
 
 module.exports = {
   registerMemoryTools,
+  readMemory,
+  writeMemory,
+  MEMORY_FILE,
   appendToTrace,
 };
