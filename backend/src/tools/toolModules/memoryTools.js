@@ -40,6 +40,8 @@ async function writeMemory(data) {
  * Helper to append a line to the trace file.
  */
 async function appendToTrace(text) {
+  console.log("BROOOOOOOOOOOOOO");
+  console.log(text);
   try {
     const dir = path.dirname(TRACE_FILE);
     await fs.mkdir(dir, { recursive: true });

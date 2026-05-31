@@ -1,6 +1,7 @@
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const util = require("util");
 const GeminiClient = require("./gemini/geminiClient");
+const { appendToTrace } = require("./tools/toolModules/memoryTools");
 
 function logChatEvent(type, value) {
   if (process.env.LOOP_DEBUG !== "1") return;
@@ -232,6 +233,8 @@ async function runTurn(client, tools, opts = {}) {
 		const callResults = await Promise.all(
 			calls.map(async (call) => {
 				const args = call.args || {};
+
+				await appendToTrace(`Tool Call: ${call.name} | Args: ${JSON.stringify(call.args || {})}`);
 
 				logChatEvent("TOOL CALL", {
 					name: call.name,

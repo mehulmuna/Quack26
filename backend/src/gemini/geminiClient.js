@@ -142,7 +142,7 @@ class GeminiClient {
       for (const call of calls) {
         let result;
 
-        await appendToTrace(`Tool Call: ${call.name} | Args: ${JSON.stringify(call.args || {})}`);
+        // await appendToTrace(`Tool Call: ${call.name} | Args: ${JSON.stringify(call.args || {})}`);
 
         try {
           result = await tools.execute(call.name, call.args || {});

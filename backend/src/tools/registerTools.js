@@ -18,7 +18,10 @@ function createTools(inputs) {
   registerCliTool(tools);
   registerRunAppTool(tools);
   registerRunCodeTool(tools);
-  registerCypressTools(tools);
+
+  if(process.env.CYPRESS)
+    registerCypressTools(tools);
+
   registerWriteReportTool(tools);
 
   if(process.env.CODEX)
