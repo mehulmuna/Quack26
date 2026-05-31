@@ -14,10 +14,15 @@ import { Brain, Scan } from "lucide-react";
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const hydratedConfigRef = useRef(false);
+  const terminalBufferRef = useRef("");
   const reportRequestRef = useRef(0);
   const [isRunning, setIsRunning] = useState(false);
   const [currentService, setCurrentService] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [terminalCount, setTerminalCount] = useState(0);
+  const [liveDuration, setLiveDuration] = useState(0);
+  const [liveTokensUsed, setLiveTokensUsed] = useState(0);
+  const [liveToolsCalled, setLiveToolsCalled] = useState(0);
   const [config, setConfig] = useState({
     name: "",
     directory: "",
@@ -27,7 +32,8 @@ export default function Dashboard() {
   const { data: dashboard = {} } = useQuery({
     queryKey: ["dashboard"],
     queryFn: getDashboardData,
-    refetchInterval: 10000
+    // Keep stats responsive while scans are active.
+    refetchInterval: isRunning ? 1000 : 10000
   });
 
   const { data: runningState } = useQuery({
@@ -40,6 +46,17 @@ export default function Dashboard() {
   const reports = dashboard.reports || [];
   const traceEvents = dashboard.traceEvents || [];
   const stats = dashboard.stats || { toolsCalled: 0, tokensUsed: 0, duration: 0 };
+  const runStatus = dashboard.status || {};
+
+  const parseNumber = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  };
+
+  const traceToolCount = traceEvents.filter((event) => event.event_type === "tool_call").length;
+  const toolsCalledLive = Math.max(parseNumber(stats.toolsCalled), traceToolCount, liveToolsCalled);
+  const tokensUsedLive = Math.max(parseNumber(stats.tokensUsed), liveTokensUsed);
+  const durationLive = Math.max(parseNumber(stats.duration), liveDuration);
 
   useEffect(() => {
     if (hydratedConfigRef.current || !dashboard.config) return;
@@ -63,6 +80,32 @@ export default function Dashboard() {
     }
   }, [isRunning, runningState]);
 
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const startedAtMs = runStatus?.startedAt ? Date.parse(runStatus.startedAt) : NaN;
+    if (!Number.isFinite(startedAtMs)) return;
+
+    const tick = () => {
+      const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
+      setLiveDuration(elapsedSec);
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [isRunning, runStatus?.startedAt]);
+
+  useEffect(() => {
+    if (!isRunning) {
+      setLiveToolsCalled(0);
+      setLiveTokensUsed(0);
+      return;
+    }
+
+    setLiveToolsCalled(traceToolCount);
+  }, [isRunning, traceToolCount]);
+
   const refreshDashboard = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
   }, [queryClient]);
@@ -70,6 +113,11 @@ export default function Dashboard() {
   const handleRun = useCallback(async () => {
     setCurrentService(null);
     setIsRunning(true);
+    setTerminalCount(0);
+    setLiveDuration(0);
+    setLiveTokensUsed(0);
+    setLiveToolsCalled(0);
+    terminalBufferRef.current = "";
     await startScan(config);
     await refreshDashboard();
   }, [config, refreshDashboard]);
@@ -80,6 +128,69 @@ export default function Dashboard() {
     await stopScan();
     await refreshDashboard();
   }, [refreshDashboard]);
+
+  const processTerminalLine = useCallback((line) => {
+    if (/==Starting main loop==/i.test(line)) {
+      setTerminalCount(0);
+      return;
+    }
+
+    if (/\bLOOP TURN START\b/i.test(line)) {
+      const turnMatch = line.match(/turn:\s*(\d+)/i);
+      if (turnMatch) {
+        setTerminalCount(Number(turnMatch[1]) || 0);
+        return;
+      }
+
+      setTerminalCount((current) => current + 1);
+      return;
+    }
+
+    if (/=== TURN RESULT ===/i.test(line)) {
+      setTerminalCount((current) => Math.max(current, 1));
+      return;
+    }
+
+    if (/=== FINAL ===/i.test(line)) {
+      setTerminalCount((current) => Math.max(current, 1));
+    }
+
+    const tokenMatch = line.match(/(?:totalTokenCount|tokens[_\s-]*used)\D+(\d+)/i)
+      || line.match(/\btokens?\b\D+(\d{2,})/i);
+
+    if (tokenMatch) {
+      const parsedTokens = Number(tokenMatch[1]);
+      if (Number.isFinite(parsedTokens)) {
+        setLiveTokensUsed((current) => Math.max(current, parsedTokens));
+      }
+    }
+
+    const toolsMatch = line.match(/tools?[_\s-]*called\D+(\d+)/i);
+    if (toolsMatch) {
+      const parsedTools = Number(toolsMatch[1]);
+      if (Number.isFinite(parsedTools)) {
+        setLiveToolsCalled((current) => Math.max(current, parsedTools));
+      }
+    }
+  }, []);
+
+  const handleTerminalEvent = useCallback((event) => {
+    if (event?.type !== "output" || typeof event.data !== "string") return;
+
+    const cleaned = event.data
+      .replace(/\u001b\[[0-9;]*m/g, "")
+      .replace(/\r/g, "");
+
+    const nextBuffer = `${terminalBufferRef.current}${cleaned}`;
+    const lines = nextBuffer.split("\n");
+    terminalBufferRef.current = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.trim()) {
+        processTerminalLine(line.trim());
+      }
+    }
+  }, [processTerminalLine]);
 
   const handleSuggestedFix = useCallback(async () => {
     if (!selectedReport) return;
@@ -137,17 +248,17 @@ export default function Dashboard() {
                       <Scan className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <h1 className="text-lg font-bold tracking-tight">Service Scanner</h1>
+                      <h1 className="text-lg font-bold tracking-tight">PsychoPunch</h1>
                       <p className="text-xs text-muted-foreground">Discover & analyze your architecture</p>
                     </div>
                   </div>
 
-                  <OrbVisual isRunning={isRunning} servicesCount={services.length} />
+                  <OrbVisual isRunning={isRunning} count={terminalCount} />
                   <div className="h-px bg-border/30" />
                   <StatsBar
-                    toolsCalled={stats.toolsCalled}
-                    tokensUsed={stats.tokensUsed}
-                    duration={stats.duration}
+                    toolsCalled={toolsCalledLive}
+                    tokensUsed={tokensUsedLive}
+                    duration={durationLive}
                   />
                   <div className="h-px bg-border/30" />
                 </section>
@@ -165,7 +276,7 @@ export default function Dashboard() {
             </div>
 
             <div className="min-h-0 flex-1">
-              <BackendTerminal />
+              <BackendTerminal onEvent={handleTerminalEvent} />
             </div>
           </div>
         </main>
