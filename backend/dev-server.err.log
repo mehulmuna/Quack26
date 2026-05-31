@@ -1,0 +1,252 @@
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:786:9)
+    at execFile (node:child_process:349:17)
+    at C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:74:5
+    at new Promise (<anonymous>)
+    at runDockerCli (C:\Users\adria\source\repos\Quack26\backend\src\chaos\dockerClient.js:73:10)
+    at startToxiproxy (C:\Users\adria\source\repos\Quack26\backend\src\toxiproxy\start.js:7:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runMainLoop (C:\Users\adria\source\repos\Quack26\backend\src\index.js:70:5) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}

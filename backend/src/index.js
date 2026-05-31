@@ -13,6 +13,18 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3002;
 
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+        res.sendStatus(204);
+        return;
+    }
+
+    next();
+});
 app.use(express.json());
 
 function parseJsonEnv(name) {
@@ -28,15 +40,40 @@ function parseJsonEnv(name) {
     }
 }
 
-const INPUTS = {
+const DEFAULT_INPUTS = {
     name: process.env.REPO_NAME,
-    dir: process.env.REPO_ABSOLUTE_PATH,
+    dir: process.env.REPO_ABSOLUTE_PATH || path.resolve(__dirname, "../.."),
     run: parseJsonEnv("REPO_RUN")
 };
 
+function normalizeRunCommands(commands) {
+    if (!Array.isArray(commands)) return undefined;
+
+    return commands
+        .filter((command) => command?.label && command?.command)
+        .reduce((acc, command) => {
+            acc[command.label] = command.command;
+            return acc;
+        }, {});
+}
+
+function normalizeLoopInput(input = {}) {
+    return {
+        name: input.name || input.projectName || DEFAULT_INPUTS.name || "Quack26",
+        dir: input.directory || input.dir || DEFAULT_INPUTS.dir,
+        run: normalizeRunCommands(input.commands) || input.run || DEFAULT_INPUTS.run || {},
+    };
+}
+
 async function runMainLoop(input, opts = {}){
 
+	console.log("==Starting main loop==");
+
     await startToxiproxy();
+
+	console.log(input);
+	
+	console.log("==Started the toxiproxy==");
 
     return runLoop(new GeminiClient(), createTools(input), {
         prompt: redAgentPrompt(input),
@@ -83,7 +120,7 @@ function createMainLoopController() {
 
     return {
         status,
-        async start() {
+        async start(input = {}) {
             if (state.promise) {
                 return {
                     ok: true,
@@ -98,7 +135,9 @@ function createMainLoopController() {
             state.stoppedAt = null;
             state.lastError = null;
 
-            state.promise = runMainLoop(INPUTS, { signal: state.controller.signal })
+            const loopInput = normalizeLoopInput(input);
+
+            state.promise = runMainLoop(loopInput, { signal: state.controller.signal })
                 .then((result) => {
                     state.lastResult = result;
                     return result;
@@ -144,7 +183,14 @@ function createMainLoopController() {
 
 const mainLoop = createMainLoopController();
 
-app.use(createRouter({ mainLoop }));
+app.use(createRouter({
+    mainLoop,
+    defaultConfig: {
+        name: DEFAULT_INPUTS.name || "Quack26",
+        directory: DEFAULT_INPUTS.dir,
+        run: DEFAULT_INPUTS.run || {},
+    },
+}));
 
 app.listen(port, () => {
 	console.log(`Express API listening on http://localhost:${port}`);

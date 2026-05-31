@@ -8,6 +8,7 @@ export default function RunControls({ isRunning, onRun, onStop }) {
       {!isRunning ? (
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button
+            type="button"
             onClick={onRun}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-2.5 rounded-full font-medium tracking-wide gap-2 shadow-lg shadow-primary/20"
           >
@@ -18,6 +19,7 @@ export default function RunControls({ isRunning, onRun, onStop }) {
       ) : (
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button
+            type="button"
             onClick={onStop}
             variant="destructive"
             className="px-8 py-2.5 rounded-full font-medium tracking-wide gap-2"
