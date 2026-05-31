@@ -78,11 +78,13 @@ async function testAgentRun(targetDir) {
     return;
   }
 
+  const started = Date.now();
   const result = await runCodebaseAnalyzer(targetDir, { maxTurns: 12 });
 
   console.log("Turns:", result.turns);
+  console.log("Elapsed:", `${((Date.now() - started) / 1000).toFixed(1)}s`);
   console.log("Error:", result.error ?? "(none)");
-  console.log("\nFinal report:\n", result.text);
+  console.log("\nFinal report:\n", result.text || "(empty)");
 
   const usedTools = result.messages?.some((m) =>
     m.parts?.some((p) => p.functionCall || p.functionResponse)
@@ -91,19 +93,27 @@ async function testAgentRun(targetDir) {
 
   const fs = require("node:fs/promises");
   const memoryPath = path.resolve(__dirname, "../../data/memory.json");
-  const memory = JSON.parse(await fs.readFile(memoryPath, "utf-8"));
-  const knowledgeKeys = Object.keys(memory.knowledge || {});
-  console.log("memory.json knowledge keys:", knowledgeKeys.slice(-5).join(", ") || "(empty)");
+  try {
+    const memory = JSON.parse(await fs.readFile(memoryPath, "utf-8"));
+    const knowledgeKeys = Object.keys(memory.knowledge || {});
+    console.log("memory.json knowledge keys:", knowledgeKeys.slice(-5).join(", ") || "(empty)");
 
-  const hasAnalysis = knowledgeKeys.some(
-    (k) =>
-      k.includes("vulnerabilit") ||
-      k.includes("codebase") ||
-      k.includes("target_directory") ||
-      typeof memory.knowledge[k] === "object"
-  );
-  if (!hasAnalysis && knowledgeKeys.length === 0) {
-    console.warn("warn: memory.knowledge may not have been updated — check agent followed workflow");
+    const hasAnalysis = knowledgeKeys.some(
+      (k) =>
+        k.includes("vulnerabilit") ||
+        k.includes("codebase") ||
+        k.includes("target_directory") ||
+        typeof memory.knowledge[k] === "object"
+    );
+    if (!hasAnalysis && knowledgeKeys.length === 0) {
+      console.warn("warn: memory.knowledge may not have been updated — check agent followed workflow");
+    }
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      console.warn("warn: memory.json not written — agent may not have reached memory_update_knowledge");
+    } else {
+      throw err;
+    }
   }
 
   if (result.error) process.exit(1);
