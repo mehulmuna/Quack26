@@ -1,7 +1,10 @@
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const util = require("util");
+const GeminiClient = require("./gemini/geminiClient");
 
 function logChatEvent(type, value) {
+  if (process.env.LOOP_DEBUG !== "1") return;
+
   console.log(`\n========== ${type} ==========`);
 
   if (typeof value === "string") {
@@ -147,7 +150,9 @@ async function runLoop(client, tools, opts = {}) {
 		if (typeof opts.out === "function") {
 			opts.out(result);
 		}
-		console.log(result);
+		if (process.env.LOOP_DEBUG === "1") {
+			console.log(result);
+		}
 		// if (result.error && opts.stopOnError !== false) break;
 		if (opts.stopWhenDone !== false && result.done) break;
 
@@ -224,38 +229,45 @@ async function runTurn(client, tools, opts = {}) {
 
 		const responseParts = [];
 
-		for (const call of calls) {
-			const args = call.args || {};
+		const callResults = await Promise.all(
+			calls.map(async (call) => {
+				const args = call.args || {};
 
-			logChatEvent("TOOL CALL", {
-				name: call.name,
-				args,
-			});
+				logChatEvent("TOOL CALL", {
+					name: call.name,
+					args,
+				});
 
-			let result;
+				let result;
 
-			try {
-				result = await toolAdapter.execute(call.name, args);
-			} catch (err) {
-				result = {
-					error: err?.message || String(err),
-				};
-			}
+				try {
+					result = await toolAdapter.execute(call.name, args);
+				} catch (err) {
+					result = {
+						error: err?.message || String(err),
+					};
+				}
 
+				logChatEvent("TOOL RESULT", {
+					name: call.name,
+					result,
+				});
+
+				return { call, args, result };
+			})
+		);
+
+		for (const { call, args, result } of callResults) {
 			toolResults.push({
 				name: call.name,
 				args,
 				result,
 			});
 
-			logChatEvent("TOOL RESULT", {
-				name: call.name,
-				result,
-			});
-
 			responseParts.push({
 				functionResponse: {
 					name: call.name,
+					...(call.id ? { id: call.id } : {}),
 					response: {
 						result,
 					},
@@ -283,9 +295,95 @@ async function runTurn(client, tools, opts = {}) {
 	};
 }
 
+/**
+ * Back-compat wrapper used by codebaseAnalyzer and attackLoop.
+ * Maps the old runAgentLoop(opts) API onto runLoop(client, tools, opts).
+ */
+async function runAgentLoop(opts = {}) {
+	const {
+		systemPrompt,
+		messages: initialMessages = [],
+		tools,
+		model,
+		apiKey,
+		maxTurns = 15,
+		maxToolTurns: maxToolTurnsOpt,
+		maxContinuations = 1,
+		temperature,
+		maxOutputTokens,
+	} = opts;
+
+	if (!systemPrompt) throw new Error("systemPrompt is required");
+
+	const client = new GeminiClient({ model, apiKey });
+	const maxToolTurns = maxToolTurnsOpt ?? maxTurns;
+	const messages = normalizeMessages(initialMessages);
+	const turnResults = [];
+
+	for (let continuation = 0; continuation <= maxContinuations; continuation++) {
+		const result = await runTurn(client, tools, {
+			systemPrompt,
+			messages,
+			maxToolTurns,
+			temperature,
+			maxOutputTokens,
+		});
+
+		turnResults.push(result);
+
+		if (result.done || !result.error) {
+			return {
+				text: result.text,
+				messages: result.messages,
+				turns: result.turns,
+				turnResults,
+				raw: result.raw,
+				error: result.error,
+				done: result.done,
+			};
+		}
+
+		if (result.error !== "max tool turns reached" || continuation >= maxContinuations) {
+			return {
+				text: result.text,
+				messages: result.messages,
+				turns: result.turns,
+				turnResults,
+				raw: result.raw,
+				error: result.error,
+				done: result.done,
+			};
+		}
+
+		messages.push({
+			role: "user",
+			parts: [
+				{
+					text:
+						"You have reached the tool-call limit. Stop exploring. " +
+						"Call memory_update_knowledge now with your findings so far, " +
+						"then reply with a concise final report as plain text (no further tool calls).",
+				},
+			],
+		});
+	}
+
+	const last = turnResults.at(-1);
+	return {
+		text: last?.text || "",
+		messages: last?.messages || messages,
+		turns: last?.turns ?? maxToolTurns,
+		turnResults,
+		raw: last?.raw,
+		error: last?.error,
+		done: last?.done ?? false,
+	};
+}
+
 module.exports = {
 	runLoop,
 	runTurn,
+	runAgentLoop,
 	getText,
 	getFunctionCalls,
 	normalizeMessages,
