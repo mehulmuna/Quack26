@@ -30,10 +30,6 @@ const statusColors = {
 export default function ServicesList({ services = [], currentService }) {
   return (
     <div className="space-y-2">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-        Discovered Services ({services.length})
-      </h3>
-
       <ScrollArea className="h-48">
         <div className="space-y-1.5 pr-2">
           <AnimatePresence>
