@@ -14,12 +14,9 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 const INPUTS = {
-    name: "liftlog",
-    dir: "C:/Users/adria/source/repos/osu/swe/goofygoobers",
-    run: {
-        "backend": "npm start",
-        "frontend": "npm start"
-    }
+    name: process.env.REPO_NAME,
+    dir: process.env.REPO_ABSOLUTE_PATH,
+    run: JSON.parse(process.env.REPO_RUN)
 };
 
 async function runMainLoop(input){
@@ -41,6 +38,10 @@ async function runMainLoop(input){
     })
     .catch(console.error);
 }
+
+runMainLoop(INPUTS);
+
+
 const dashboardData = {
 	kpis: {
 		experimentsRun: 42,
