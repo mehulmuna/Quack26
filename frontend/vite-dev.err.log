@@ -1,0 +1,9 @@
+Error: The following dependencies are imported but could not be resolved:
+
+  [36m@/App.jsx[39m [37m[2m(imported by C:/Users/adria/source/repos/Quack26/frontend/src/main.jsx)[22m[39m
+  [36m@/index.css[39m [37m[2m(imported by C:/Users/adria/source/repos/Quack26/frontend/src/main.jsx)[22m[39m
+
+Are they installed?
+    at file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:14849:15
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///C:/Users/adria/source/repos/Quack26/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:47039:28

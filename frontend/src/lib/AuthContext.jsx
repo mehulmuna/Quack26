@@ -4,6 +4,23 @@ import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
+const LOCAL_AUTH_KEY = 'quack26_local_user';
+
+const createLocalUser = (identifier = 'local-user') => ({
+  id: 'local-user',
+  email: identifier,
+  full_name: identifier,
+  role: 'admin',
+});
+
+const getLocalUser = () => {
+  try {
+    const stored = window.localStorage.getItem(LOCAL_AUTH_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -20,6 +37,17 @@ export const AuthProvider = ({ children }) => {
 
   const checkAppState = async () => {
     try {
+      const localUser = getLocalUser();
+      if (localUser) {
+        setUser(localUser);
+        setIsAuthenticated(true);
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        setAuthError(null);
+        return;
+      }
+
       setIsLoadingPublicSettings(true);
       setAuthError(null);
       
@@ -90,6 +118,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkUserAuth = async () => {
+    const localUser = getLocalUser();
+    if (localUser) {
+      setUser(localUser);
+      setIsAuthenticated(true);
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+      setAuthError(null);
+      return;
+    }
+
     try {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
@@ -115,6 +153,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = (shouldRedirect = true) => {
+    window.localStorage.removeItem(LOCAL_AUTH_KEY);
     setUser(null);
     setIsAuthenticated(false);
     
@@ -129,7 +168,19 @@ export const AuthProvider = ({ children }) => {
 
   const navigateToLogin = () => {
     // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    window.location.href = '/login';
+  };
+
+  const loginLocal = (identifier) => {
+    const localUser = createLocalUser(identifier || 'local-user');
+    window.localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(localUser));
+    setUser(localUser);
+    setIsAuthenticated(true);
+    setIsLoadingAuth(false);
+    setIsLoadingPublicSettings(false);
+    setAuthChecked(true);
+    setAuthError(null);
+    return localUser;
   };
 
   return (
@@ -143,6 +194,7 @@ export const AuthProvider = ({ children }) => {
       authChecked,
       logout,
       navigateToLogin,
+      loginLocal,
       checkUserAuth,
       checkAppState
     }}>
