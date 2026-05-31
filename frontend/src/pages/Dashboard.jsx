@@ -11,11 +11,13 @@ import ReportList from "@/components/sidebar/ReportList";
 import ReportViewer from "@/components/sidebar/ReportViewer";
 import TraceLog from "@/components/memory/TraceLog";
 import AnalysisReports from "@/components/memory/AnalysisReports";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Brain, Scan } from "lucide-react";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const hydratedConfigRef = useRef(false);
+  const reportRequestRef = useRef(0);
   const [isRunning, setIsRunning] = useState(false);
   const [currentService, setCurrentService] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -83,32 +85,42 @@ export default function Dashboard() {
   }, [refreshDashboard]);
 
   const handleSelectReport = useCallback(async (report) => {
+    const requestId = reportRequestRef.current + 1;
+    reportRequestRef.current = requestId;
     setSelectedReport(report);
 
     if (report.content) return;
 
     try {
-      setSelectedReport(await getReport(report.id));
+      const fullReport = await getReport(report.id);
+      if (reportRequestRef.current !== requestId) return;
+
+      setSelectedReport(fullReport);
     } catch (error) {
+      if (reportRequestRef.current !== requestId) return;
+
       setSelectedReport({
         ...report,
-        content: `Unable to load report content.\n\n${error.message}`,
+        content: `# Unable to load report content\n\n${error.message}`,
       });
     }
   }, []);
 
+  const handleReportDialogOpenChange = useCallback((open) => {
+    if (open) return;
+
+    reportRequestRef.current += 1;
+    setSelectedReport(null);
+  }, []);
+
   return (
     <div className="h-screen flex bg-background overflow-hidden">
-      <div className="w-64 border-r border-border/50 bg-card/50 flex flex-col flex-shrink-0">
-        {selectedReport ? (
-          <ReportViewer report={selectedReport} onBack={() => setSelectedReport(null)} />
-        ) : (
-          <ReportList
-            reports={reports}
-            selectedId={selectedReport?.id}
-            onSelect={handleSelectReport}
-          />
-        )}
+      <div className="w-72 border-r border-border/50 bg-card/50 flex flex-col flex-shrink-0">
+        <ReportList
+          reports={reports}
+          selectedId={selectedReport?.id}
+          onSelect={handleSelectReport}
+        />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -145,7 +157,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="w-72 border-l border-border/50 bg-card/50 flex-shrink-0 flex flex-col overflow-hidden">
+      <div className="w-[30vw] border-l border-border/50 bg-card/50 flex-shrink-0 flex flex-col overflow-hidden">
         <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
           <Brain className="w-4 h-4 text-accent" />
           <h2 className="text-sm font-semibold tracking-wide">Memory</h2>
@@ -157,6 +169,12 @@ export default function Dashboard() {
           <AnalysisReports reports={reports} onSelect={handleSelectReport} />
         </div>
       </div>
+
+      <Dialog open={!!selectedReport} onOpenChange={handleReportDialogOpenChange}>
+        <DialogContent className="h-[85vh] max-h-[900px] min-h-0 w-[calc(100vw-2rem)] max-w-5xl gap-0 overflow-hidden p-0">
+          <ReportViewer report={selectedReport} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
