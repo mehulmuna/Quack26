@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start:toxiproxy": "docker compose up -d",
+    "start": "node src/index.js",
     "chaos:ensure": "node -e \"require('dotenv').config(); require('./src/chaos/ensureRuntime').ensureChaosRuntime().then(r=>console.log(JSON.stringify(r,null,2))).catch(e=>{console.error(e.message||e);process.exit(1)})\"",
     "test": "node src/test/attack-loop-smoke.js --tools-only",
     "gemini:demo": "node src/gemini/gemini_demo.js",
