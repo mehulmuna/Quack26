@@ -3,6 +3,7 @@ const path = require("node:path");
 
 const MEMORY_FILE = path.resolve(__dirname, "../../../data/memory.json");
 const TRACE_FILE = path.resolve(__dirname, "../../../data/trace.txt");
+const REPORTS_DIR = path.resolve(__dirname, "../../../data/reports");
 
 /**
  * Helper to ensure the memory file exists and read it.
@@ -146,12 +147,153 @@ function registerMemoryTools(tools) {
       return { ok: true, cleared };
     }
   });
+
+  tools.register({
+    name: "memory_list_reports",
+    description: "List all chaos engineering and analysis reports saved in the reports directory.",
+    parameters: { type: "object", properties: {} },
+    execute: async () => {
+      try {
+        await fs.mkdir(REPORTS_DIR, { recursive: true });
+        const files = await fs.readdir(REPORTS_DIR);
+        const reports = files.filter(f => f.endsWith(".md") || f.endsWith(".txt"));
+        return { ok: true, reports };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+  });
+
+  tools.register({
+    name: "memory_read_report",
+    description: "Read the full content of a specific report file by name.",
+    parameters: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "The name of the report file (e.g., 'mongodb_latency_report.md')." }
+      },
+      required: ["filename"]
+    },
+    execute: async ({ filename }) => {
+      try {
+        // Security: Prevent path traversal
+        const safeName = path.basename(filename);
+        const targetPath = path.join(REPORTS_DIR, safeName);
+        const content = await fs.readFile(targetPath, "utf-8");
+        return { ok: true, filename: safeName, content };
+      } catch (err) {
+        return { ok: false, error: `Could not read report: ${err.message}` };
+      }
+    }
+  });
+
+  tools.register({
+    name: "memory_get_analysis",
+    description: "Retrieve the core codebase analysis report (analysis.md).",
+    parameters: { type: "object", properties: {} },
+    execute: async () => {
+      try {
+        const filenames = ["analysis.md", "analysis.txt"];
+        for (const name of filenames) {
+          try {
+            const content = await fs.readFile(path.join(REPORTS_DIR, name), "utf-8");
+            return { ok: true, filename: name, content };
+          } catch {
+            continue;
+          }
+        }
+        return { 
+          ok: false, 
+          error: "No analysis report found. You may need to run the codebase analyzer first." 
+        };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+  });
+
+  tools.register({
+    name: "memory_search_reports",
+    description: "Search through all saved reports using BM25 relevance ranking to find the most relevant information for a query.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "The search query (e.g., 'mongodb sequential database operations')." },
+        topN: { type: "integer", description: "Number of results to return.", default: 3 }
+      },
+      required: ["query"]
+    },
+    execute: async ({ query, topN = 3 }) => {
+      try {
+        await fs.mkdir(REPORTS_DIR, { recursive: true });
+        const files = await fs.readdir(REPORTS_DIR);
+        const reportFiles = files.filter(f => f.endsWith(".md") || f.endsWith(".txt"));
+
+        if (reportFiles.length === 0) {
+          return { ok: true, results: [], message: "No reports found to search." };
+        }
+
+        const documents = await Promise.all(reportFiles.map(async (filename) => {
+          const content = await fs.readFile(path.join(REPORTS_DIR, filename), "utf-8");
+          return { filename, content };
+        }));
+
+        const results = bm25Search(query, documents)
+          .filter(r => r.score > 0)
+          .slice(0, topN)
+          .map(r => ({
+            filename: r.filename,
+            score: r.score.toFixed(4),
+            snippet: r.content.slice(0, 200).trim().replace(/\s+/g, ' ') + "..."
+          }));
+
+        return { ok: true, query, results };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+  });
+}
+
+/**
+ * Simple BM25 ranking algorithm.
+ * @param {string} query 
+ * @param {Array<{filename: string, content: string}>} documents 
+ * @param {number} k1 term frequency saturation parameter
+ * @param {number} b length normalization parameter
+ */
+function bm25Search(query, documents, k1 = 1.2, b = 0.75) {
+  const tokenize = (text) => text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const queryTerms = tokenize(query);
+  const docTokens = documents.map(d => tokenize(d.content));
+
+  const N = documents.length;
+  const avgdl = docTokens.reduce((sum, tokens) => sum + tokens.length, 0) / (N || 1);
+
+  const idfs = {};
+  for (const term of new Set(queryTerms)) {
+    const nq = docTokens.filter(tokens => tokens.includes(term)).length;
+    idfs[term] = Math.log(((N - nq + 0.5) / (nq + 0.5)) + 1);
+  }
+
+  return documents.map((doc, i) => {
+    const tokens = docTokens[i];
+    const dl = tokens.length;
+    let score = 0;
+    for (const term of queryTerms) {
+      if (!idfs[term]) continue;
+      const fqd = tokens.filter(t => t === term).length;
+      const numerator = fqd * (k1 + 1);
+      const denominator = fqd + k1 * (1 - b + (b * (dl / avgdl)));
+      score += idfs[term] * (numerator / denominator);
+    }
+    return { ...doc, score };
+  }).sort((a, b) => b.score - a.score);
 }
 
 module.exports = {
   registerMemoryTools,
   readMemory,
   writeMemory,
-  MEMORY_FILE,
-  appendToTrace,
+  appendToTrace
 };
