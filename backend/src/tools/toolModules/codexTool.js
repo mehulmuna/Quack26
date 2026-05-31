@@ -103,5 +103,6 @@ function registerCodexTool(tools) {
 }
 
 module.exports = {
+  runCodexExec,
   registerCodexTool,
 };
